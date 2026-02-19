@@ -1,0 +1,528 @@
+# React Native + Expo Project Structure (2026)
+
+## 📁 Complete Project Structure
+
+```
+my-ecommerce-app/
+├── app/                          # Expo Router (File-based routing)
+│   ├── (tabs)/                   # Tab navigation group
+│   │   ├── index.tsx             # Home/Shop screen
+│   │   ├── categories.tsx        # Categories screen
+│   │   ├── cart.tsx              # Cart screen
+│   │   └── profile.tsx           # Profile screen
+│   ├── (auth)/                   # Auth flow group
+│   │   ├── login.tsx
+│   │   ├── register.tsx
+│   │   └── forgot-password.tsx
+│   ├── product/
+│   │   └── [id].tsx              # Product detail (dynamic route)
+│   ├── category/
+│   │   └── [slug].tsx            # Category products
+│   ├── checkout/
+│   │   ├── index.tsx             # Checkout screen
+│   │   ├── address.tsx           # Address selection
+│   │   └── payment.tsx           # Payment screen
+│   ├── orders/
+│   │   ├── index.tsx             # Order history
+│   │   └── [id].tsx              # Order detail
+│   ├── _layout.tsx               # Root layout
+│   └── +not-found.tsx            # 404 screen
+│
+├── components/               # Reusable components
+│   ├── ui/                   # Base UI components
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   ├── Card.tsx
+│   │   ├── Badge.tsx
+│   │   ├── Spinner.tsx
+│   │   └── index.ts
+│   ├── common/               # Common components
+│   │   ├── Header.tsx
+│   │   ├── SearchBar.tsx
+│   │   ├── EmptyState.tsx
+│   │   ├── ErrorBoundary.tsx
+│   │   └── index.ts
+│   ├── product/              # Product-specific components
+│   │   ├── ProductCard.tsx
+│   │   ├── ProductList.tsx
+│   │   ├── ProductGrid.tsx
+│   │   ├── ProductFilter.tsx
+│   │   ├── ProductImage.tsx
+│   │   └── index.ts
+│   ├── cart/                 # Cart components
+│   │   ├── CartItem.tsx
+│   │   ├── CartSummary.tsx
+│   │   └── index.ts
+│   └── category/             # Category components
+│       ├── CategoryCard.tsx
+│       ├── CategoryList.tsx
+│       └── index.ts
+│
+├── services/                 # API services
+│   ├── api/
+│   │   ├── client.ts         # Axios/Fetch instance
+│   │   ├── endpoints.ts      # API endpoints constants
+│   │   └── interceptors.ts   # Request/Response interceptors
+│   ├── products.service.ts
+│   ├── categories.service.ts
+│   ├── auth.service.ts
+│   ├── cart.service.ts
+│   ├── orders.service.ts
+│   └── index.ts
+│
+├── hooks/                    # React Query hooks & custom hooks
+│   ├── queries/              # React Query hooks
+│   │   ├── useProducts.ts
+│   │   ├── useProduct.ts
+│   │   ├── useCategories.ts
+│   │   ├── useCart.ts
+│   │   ├── useOrders.ts
+│   │   └── index.ts
+│   ├── mutations/            # React Query mutations
+│   │   ├── useAddToCart.ts
+│   │   ├── useUpdateCart.ts
+│   │   ├── usePlaceOrder.ts
+│   │   ├── useLogin.ts
+│   │   └── index.ts
+│   ├── useDebounce.ts        # Custom hooks
+│   ├── useKeyboard.ts
+│   └── index.ts
+│
+├── store/                    # State management (Zustand/Context)
+│   ├── auth.store.ts         # Auth state
+│   ├── cart.store.ts         # Cart state (local)
+│   ├── filter.store.ts       # Filter/Search state
+│   └── index.ts
+│
+├── types/                    # TypeScript types
+│   ├── product.types.ts
+│   ├── category.types.ts
+│   ├── cart.types.ts
+│   ├── order.types.ts
+│   ├── user.types.ts
+│   ├── api.types.ts
+│   └── index.ts
+│
+├── utils/                    # Utility functions
+│   ├── formatters.ts         # Price, date formatters
+│   ├── validators.ts         # Form validators
+│   ├── storage.ts            # AsyncStorage helpers
+│   ├── helpers.ts            # General helpers
+│   └── index.ts
+│
+├── constants/                # App constants
+│   ├── theme.ts              # Colors, fonts, spacing
+│   ├── config.ts             # App config
+│   ├── images.ts             # Image constants
+│   └── index.ts
+│
+├── lib/                      # Third-party configs
+│       ├── react-query.ts        # React Query setup
+│       └── index.ts
+│
+├── assets/                       # Static assets
+│   ├── images/
+│   ├── fonts/
+│   └── icons/
+│
+├── .env                          # Environment variables
+├── .env.example
+├── app.json                      # Expo config
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+---
+
+## 📝 Key Files Implementation
+
+### **1. React Query Setup** (`src/lib/react-query.ts`)
+
+```typescript
+import { QueryClient } from '@tanstack/react-query';
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+      retry: 2,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+
+// Query Keys Factory
+export const queryKeys = {
+  products: {
+    all: ['products'] as const,
+    lists: () => [...queryKeys.products.all, 'list'] as const,
+    list: (filters: Record<string, any>) => 
+      [...queryKeys.products.lists(), filters] as const,
+    details: () => [...queryKeys.products.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.products.details(), id] as const,
+  },
+  categories: {
+    all: ['categories'] as const,
+    lists: () => [...queryKeys.categories.all, 'list'] as const,
+    details: () => [...queryKeys.categories.all, 'detail'] as const,
+    detail: (slug: string) => [...queryKeys.categories.details(), slug] as const,
+  },
+  cart: {
+    all: ['cart'] as const,
+    detail: () => [...queryKeys.cart.all, 'detail'] as const,
+  },
+  orders: {
+    all: ['orders'] as const,
+    lists: () => [...queryKeys.orders.all, 'list'] as const,
+    details: () => [...queryKeys.orders.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.orders.details(), id] as const,
+  },
+} as const;
+```
+
+### **2. API Client** (`src/services/api/client.ts`)
+
+```typescript
+import axios from 'axios';
+import { getToken } from '@/utils/storage';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:1337/api';
+
+export const apiClient = axios.create({
+  baseURL: API_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor - Add auth token
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor - Handle errors
+apiClient.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized - logout user
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+### **3. Product Service** (`src/services/products.service.ts`)
+
+```typescript
+import { apiClient } from './api/client';
+import type { Product, ProductFilters } from '@/types';
+
+export const productsService = {
+  getAll: async (filters?: ProductFilters) => {
+    const params = new URLSearchParams();
+    
+    if (filters?.category) params.append('filters[category][slug][$eq]', filters.category);
+    if (filters?.brand) params.append('filters[brand][slug][$eq]', filters.brand);
+    if (filters?.minPrice) params.append('filters[price][$gte]', filters.minPrice.toString());
+    if (filters?.maxPrice) params.append('filters[price][$lte]', filters.maxPrice.toString());
+    if (filters?.search) params.append('filters[name][$containsi]', filters.search);
+    
+    params.append('populate', 'images,brand,category');
+    params.append('pagination[pageSize]', '20');
+    
+    return apiClient.get<{ data: Product[] }>(`/products?${params.toString()}`);
+  },
+
+  getById: async (id: string) => {
+    return apiClient.get<{ data: Product }>(
+      `/products/${id}?populate=images,brand,category,reviews.customer,productAttributes.attribute`
+    );
+  },
+
+  getFeatured: async () => {
+    return apiClient.get<{ data: Product[] }>(
+      '/products?filters[isFeatured][$eq]=true&populate=images,brand&pagination[pageSize]=10'
+    );
+  },
+};
+```
+
+### **4. Product Query Hook** (`src/hooks/queries/useProducts.ts`)
+
+```typescript
+import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { productsService } from '@/services';
+import { queryKeys } from '@/lib/react-query';
+import type { Product, ProductFilters } from '@/types';
+
+export const useProducts = (
+  filters?: ProductFilters,
+  options?: Omit<UseQueryOptions<Product[]>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: queryKeys.products.list(filters || {}),
+    queryFn: () => productsService.getAll(filters).then(res => res.data),
+    ...options,
+  });
+};
+
+export const useProduct = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.products.detail(id),
+    queryFn: () => productsService.getById(id).then(res => res.data),
+    enabled: !!id,
+  });
+};
+
+export const useFeaturedProducts = () => {
+  return useQuery({
+    queryKey: [...queryKeys.products.all, 'featured'],
+    queryFn: () => productsService.getFeatured().then(res => res.data),
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+};
+```
+
+### **5. Add to Cart Mutation** (`src/hooks/mutations/useAddToCart.ts`)
+
+```typescript
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { cartService } from '@/services';
+import { queryKeys } from '@/lib/react-query';
+import { Alert } from 'react-native';
+
+export const useAddToCart = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { productId: string; quantity: number }) => 
+      cartService.addItem(data),
+    
+    onSuccess: () => {
+      // Invalidate cart queries to refetch
+      queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+      
+      Alert.alert('Success', 'Item added to cart');
+    },
+    
+    onError: (error: any) => {
+      Alert.alert('Error', error.message || 'Failed to add item to cart');
+    },
+  });
+};
+```
+
+### **6. Root Layout** (`app/_layout.tsx`)
+
+```typescript
+import { useEffect } from 'react';
+import { Stack } from 'expo-router';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { queryClient } from '@/lib/react-query';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+export default function RootLayout() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen 
+              name="product/[id]" 
+              options={{ 
+                title: 'Product Details',
+                presentation: 'card'
+              }} 
+            />
+          </Stack>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+### **7. Home Screen** (`app/(tabs)/index.tsx`)
+
+```typescript
+import { View, FlatList, RefreshControl } from 'react-native';
+import { useFeaturedProducts } from '@/hooks/queries';
+import { ProductCard, SearchBar, Spinner } from '@/components';
+
+export default function HomeScreen() {
+  const { data: products, isLoading, refetch, isRefetching } = useFeaturedProducts();
+
+  if (isLoading) return <Spinner />;
+
+  return (
+    <View style={{ flex: 1 }}>
+      <SearchBar />
+      
+      <FlatList
+        data={products}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <ProductCard product={item} />}
+        numColumns={2}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+      />
+    </View>
+  );
+}
+```
+
+### **8. Product Detail Screen** (`app/product/[id].tsx`)
+
+```typescript
+import { View, Text, ScrollView, Image } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { useProduct } from '@/hooks/queries';
+import { useAddToCart } from '@/hooks/mutations';
+import { Button, Spinner } from '@/components/ui';
+
+export default function ProductDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: product, isLoading } = useProduct(id);
+  const addToCart = useAddToCart();
+
+  if (isLoading) return <Spinner />;
+  if (!product) return <Text>Product not found</Text>;
+
+  const handleAddToCart = () => {
+    addToCart.mutate({ productId: product.id, quantity: 1 });
+  };
+
+  return (
+    <ScrollView>
+      <Image source={{ uri: product.images[0]?.url }} />
+      <View style={{ padding: 16 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold' }}>{product.name}</Text>
+        <Text style={{ fontSize: 20, color: '#e63946' }}>₹{product.price}</Text>
+        
+        <Button 
+          title="Add to Cart" 
+          onPress={handleAddToCart}
+          loading={addToCart.isPending}
+        />
+      </View>
+    </ScrollView>
+  );
+}
+```
+
+### **9. TypeScript Types** (`src/types/product.types.ts`)
+
+```typescript
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  sku: string;
+  description: string;
+  price: number;
+  comparePrice?: number;
+  stock: number;
+  images: Image[];
+  brand: Brand;
+  category: Category;
+  rating: number;
+  reviewCount: number;
+  isFeatured: boolean;
+  productAttributes: ProductAttribute[];
+}
+
+export interface ProductFilters {
+  category?: string;
+  brand?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
+  attributes?: Record<string, string>;
+}
+
+export interface Image {
+  id: string;
+  url: string;
+  alternativeText?: string;
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: Image;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface ProductAttribute {
+  id: string;
+  value: string;
+  attribute: Attribute;
+}
+
+export interface Attribute {
+  id: string;
+  name: string;
+  slug: string;
+  unit?: string;
+}
+```
+
+---
+
+## 🔧 Package.json Dependencies
+
+```json
+{
+  "dependencies": {
+    "expo": "~52.0.0",
+    "expo-router": "~4.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.5",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-gesture-handler": "~2.20.2",
+    "@tanstack/react-query": "^5.62.14",
+    "axios": "^1.7.9",
+    "@react-native-async-storage/async-storage": "^2.1.0",
+    "zustand": "^5.0.2"
+  }
+}
+```
+
+---
+
+## 🎯 Best Practices
+
+1. **Query Keys**: Use factory pattern for consistency
+2. **Optimistic Updates**: Update UI before server confirms
+3. **Error Boundaries**: Wrap screens in error boundaries
+4. **Loading States**: Show skeletons, not just spinners
+5. **Infinite Queries**: Use `useInfiniteQuery` for product lists
+6. **Prefetching**: Prefetch product details on list hover/scroll
+7. **Cache Invalidation**: Invalidate related queries after mutations
+
+This structure scales well and follows modern React Native + Expo patterns!

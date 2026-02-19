@@ -1,0 +1,65 @@
+{
+  "kind": "collectionType",
+  "collectionName": "attributes",
+  "info": {
+    "singularName": "attribute",
+    "pluralName": "attributes",
+    "displayName": "Attribute",
+    "description": "Reusable dynamic attributes associated with product types/categories (e.g., wattage, voltage, color, brand). Supports type-specific attrs without hardcoding in Product."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 100
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "fieldType": {
+      "type": "enumeration",
+      "enum": ["string", "number", "boolean", "select", "text"],
+      "default": "string",
+      "required": true
+    },
+    "unit": {
+      "type": "string",
+      "maxLength": 20
+    },
+    "options": {
+      "type": "json",
+      "description": "For 'select' type: array of options e.g. [\"red\", \"blue\"]"
+    },
+    "isFilterable": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to use in filters/search (e.g., by wattage)"
+    },
+    "isRequired": {
+      "type": "boolean",
+      "default": false
+    },
+    "description": {
+      "type": "text"
+    },
+    "categories": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::category.category",
+      "inversedBy": "attributes"
+    },
+    "productAttributeValues": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::product-attribute-value.product-attribute-value",
+      "mappedBy": "attribute"
+    }
+  }
+}

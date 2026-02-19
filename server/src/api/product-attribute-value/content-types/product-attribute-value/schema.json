@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "product_attribute_values",
+  "info": {
+    "singularName": "product-attribute-value",
+    "pluralName": "product-attribute-values",
+    "displayName": "Product Attribute Value",
+    "description": "EAV join table for dynamic attribute values per product, tied to category's attributes. Enables type-specific attrs (e.g., Bulb.wattage=10W) without schema changes."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "value": {
+      "type": "text",
+      "required": true,
+      "description": "The value for the attribute (stringified if number/boolean; parsed based on attribute's fieldType)"
+    },
+    "product": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product.product",
+      "inversedBy": "attributeValues"
+    },
+    "attribute": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::attribute.attribute",
+      "inversedBy": "productAttributeValues"
+    }
+  }
+}
