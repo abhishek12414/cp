@@ -49,6 +49,14 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="login" />
             <Stack.Screen name="(tabs)" />
+            {/* Admin panel route for managing brands, categories, products, and orders.
+                - Uses grouped layout (admin)/_layout.tsx which sets headerShown: true
+                - Set headerShown: false in parent to avoid double headers/conflicts
+                - Placeholder for now; will add auth guards and sub-routes later */}
+            <Stack.Screen 
+              name="(admin)" 
+              options={{ headerShown: false }} 
+            />
             <Stack.Screen name="product" />
             <Stack.Screen name="category" />
             <Stack.Screen name="upload-order" />

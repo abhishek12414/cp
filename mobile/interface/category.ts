@@ -7,9 +7,14 @@ export interface CategoryInterface {
   slug: string;
   description: string;
   isActive: boolean;
-  displayOrder: number | null;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
-  image: ImageInterface | null;
+  // Media relation from Strapi (populate=image)
+  image?: {
+    data?: {
+      id: number;
+      attributes: ImageInterface;
+    } | null;
+  } | null;
 }
