@@ -25,7 +25,13 @@
     },
     "fieldType": {
       "type": "enumeration",
-      "enum": ["string", "number", "boolean", "select", "text"],
+      "enum": [
+        "string",
+        "number",
+        "boolean",
+        "select",
+        "text"
+      ],
       "default": "string",
       "required": true
     },
@@ -53,7 +59,7 @@
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::category.category",
-      "inversedBy": "attributes"
+      "mappedBy": "attributes"
     },
     "productAttributeValues": {
       "type": "relation",

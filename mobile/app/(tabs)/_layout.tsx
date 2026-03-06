@@ -55,6 +55,20 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Admin Panel tab: Public route for easy access to the admin panel.
+          - Uses admin.tsx in (tabs) as a redirect wrapper to /(admin)
+          - Icon and title as specified; placeholder until full impl.
+          - Positioned before Account for logical grouping (management tools)
+          - Future: Hide/show dynamically based on user role from auth reducer */}
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: "Admin Panel",
+          tabBarIcon: ({ color }) => (
+            <Icon size={28} name="shield-account" color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="account"
         options={{

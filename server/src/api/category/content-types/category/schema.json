@@ -14,9 +14,9 @@
   "attributes": {
     "name": {
       "type": "string",
+      "maxLength": 100,
       "required": true,
-      "unique": true,
-      "maxLength": 100
+      "unique": true
     },
     "slug": {
       "type": "uid",
@@ -37,6 +37,17 @@
       "relation": "manyToMany",
       "target": "api::attribute.attribute",
       "inversedBy": "categories"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
     }
   }
 }
