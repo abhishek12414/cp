@@ -1,7 +1,7 @@
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
 import { getQueryString } from "@/helpers/queryParams";
-import { CategoryInterface } from "@/interface";
+import { CategoryInterface, ApiResponseInterface } from "@/interface";
 
 // Input type for create/update (matches Strapi category schema.json)
 export interface CategoryInput {
@@ -11,24 +11,6 @@ export interface CategoryInput {
   isActive?: boolean;
   // image: Strapi media ID from /api/upload (number or null to keep existing)
   image?: number | null;
-}
-
-// Strapi list response wrapper
-export interface StrapiCategoryResponse {
-  data: CategoryInterface[];
-  meta?: {
-    pagination?: {
-      page: number;
-      pageSize: number;
-      pageCount: number;
-      total: number;
-    };
-  };
-}
-
-// Strapi single-item response wrapper
-export interface StrapiSingleCategoryResponse {
-  data: CategoryInterface;
 }
 
 // Filters for list queries
@@ -57,19 +39,19 @@ export const categoryApi = {
   getCategories: (params?: CategoryFilters) => {
     const query = getQueryString({ ...params });
     const url = `${apiRoutes.CATEGORIES}${query}`;
-    return apiClient.get<StrapiCategoryResponse>(url);
+    return apiClient.get<ApiResponseInterface<CategoryInterface[]>>(url);
   },
 
   // GET /api/categories/{documentId}
   getCategory: (documentId: string) => {
     const url = `${apiRoutes.CATEGORY(documentId)}`;
-    return apiClient.get<StrapiSingleCategoryResponse>(url);
+    return apiClient.get<ApiResponseInterface<CategoryInterface>>(url);
   },
 
   // POST /api/categories with { data: cleaned }
   createCategory: (data: CategoryInput) => {
     const cleaned = cleanCategoryData(data);
-    return apiClient.post<StrapiSingleCategoryResponse>(apiRoutes.CATEGORIES, {
+    return apiClient.post<ApiResponseInterface<CategoryInterface>>(apiRoutes.CATEGORIES, {
       data: cleaned,
     });
   },
@@ -77,7 +59,7 @@ export const categoryApi = {
   // PUT /api/categories/{documentId}
   updateCategory: (documentId: string, data: Partial<CategoryInput>) => {
     const cleaned = cleanCategoryData(data);
-    return apiClient.put<StrapiSingleCategoryResponse>(
+    return apiClient.put<ApiResponseInterface<CategoryInterface>>(
       apiRoutes.CATEGORY(documentId),
       { data: cleaned }
     );

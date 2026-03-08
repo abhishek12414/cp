@@ -3,11 +3,13 @@ import { StyleSheet, Text, View, ScrollView } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Button } from "react-native-paper";
+import { Ionicons } from "@expo/vector-icons";
 
-import { ThemedView } from "../../components/ThemedView";
-import { useThemeColor } from "../../hooks/useThemeColor";
-import { Colors } from "../../constants/Colors";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Colors } from "@/constants/Colors";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { useBrand, useCategories, useProducts } from "@/hooks/queries";
 
 /**
  * Admin Panel Placeholder
@@ -35,108 +37,141 @@ export default function AdminPanelScreen() {
     useThemeColor({}, "background") === Colors.light.background
       ? "light"
       : "dark";
-  const primaryColor = Colors[colorScheme].primary;
+  const palette = Colors[colorScheme];
 
-  // Navigation handlers for management sections (placeholders for now).
-  // Use full group path '/(admin)/...' for correct resolution under the (admin)
-  // route group (common Expo Router pattern for nested/grouped routes; see
-  // root index.tsx and (tabs)/admin.tsx redirect for examples). This fixes
-  // the prior navigation issue where '/admin/...' was resolving incorrectly
-  // at top-level instead of the grouped stack.
-  const handleManageBrands = () => {
-    router.push("/(admin)/brands");
-  };
+  const { data: brands } = useBrand();
+  const { data: categories } = useCategories();
+  const { data: products } = useProducts({});
 
-  const handleManageCategories = () => {
-    router.push("/(admin)/categories");
-  };
+  const stats = [
+    {
+      id: "brands",
+      label: "Brands",
+      value: brands?.length ?? 0,
+      icon: "pricetags-outline",
+      color: palette.info,
+    },
+    {
+      id: "categories",
+      label: "Categories",
+      value: categories?.length ?? 0,
+      icon: "grid-outline",
+      color: palette.success,
+    },
+    {
+      id: "products",
+      label: "Products",
+      value: products?.length ?? 0,
+      icon: "cube-outline",
+      color: palette.warning,
+    },
+  ];
 
-  const handleManageProducts = () => {
-    router.push("/(admin)/products");
-  };
-
-  const handleManageOrders = () => {
-    router.push("/(admin)/orders");
-  };
+  const actions = [
+    {
+      id: "brands",
+      label: "Manage Brands",
+      description: "Logos, website links",
+      icon: "pricetag-outline",
+      onPress: () => router.push("/(admin)/brands"),
+    },
+    {
+      id: "categories",
+      label: "Manage Categories",
+      description: "Organize storefront",
+      icon: "apps-outline",
+      onPress: () => router.push("/(admin)/categories"),
+    },
+    {
+      id: "products",
+      label: "Manage Products",
+      description: "Pricing & inventory",
+      icon: "cube-outline",
+      onPress: () => router.push("/(admin)/products"),
+    },
+    {
+      id: "orders",
+      label: "Manage Orders",
+      description: "Track fulfillment",
+      icon: "receipt-outline",
+      onPress: () => router.push("/(admin)/orders"),
+    },
+  ];
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: palette.background }]}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      {/* SafeAreaView with edges excluding 'top' to prevent overlap with status bar
-          and the custom Stack header (from admin layout, where headerShown: true).
-          This ensures content doesn't get cut off by system UI elements like notches,
-          home indicator, or header inset. ScrollView is nested inside for scrolling
-          long content (e.g., extended placeholder text/buttons), matching patterns
-          in (tabs)/index.tsx while preserving safe area handling. */}
-      <SafeAreaView 
-        style={styles.safeArea}
-        // Exclude top since header + StatusBar handle it; include others for bottom/sides
-        edges={['bottom', 'left', 'right']}
-      >
-        {/* ScrollView allows vertical scrolling if content exceeds screen height
-            (e.g., on small devices or with future expansions). hides scroll indicator
-            for clean UI; contentContainerStyle ensures padding, min-height, and
-            centering behavior like non-scroll cases. */}
+      <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          <View style={styles.content}>
-            <Text style={[styles.title, { color: primaryColor }]}>
-              Admin Panel
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: palette.text }]}>Admin Dashboard</Text>
+            <Text style={[styles.subtitle, { color: palette.icon }]}
+            >
+              Quick insights and management actions
             </Text>
-            <Text style={styles.subtitle}>
-              Manage Brands, Categories, Products, and Orders
-            </Text>
-            <Text style={styles.placeholder}>
-              This is a placeholder for the admin panel functionality.
-              {"\n\n"}
-              The backend (Strapi) already supports managing these entities via its admin interface at http://localhost:1337/admin.
-              {"\n\n"}
-              Mobile admin features will be implemented later using the existing APIs for brands, categories, products, and orders.
-              {"\n\n"}
-              Use the buttons below to navigate to placeholder screens for each section (routes resolve under the (admin) group for proper Stack nav).
-            </Text>
+          </View>
 
-            {/* Management buttons - will link to full CRUD screens later */}
-            <View style={styles.buttonContainer}>
-              <Button
-                mode="contained"
-                buttonColor={primaryColor}
-                onPress={handleManageBrands}
-                style={styles.button}
-                labelStyle={styles.buttonLabel}
+          <SectionHeader title="Overview" containerStyle={styles.sectionHeader} />
+          <View style={styles.statsGrid}>
+            {stats.map((item) => (
+              <View
+                key={item.id}
+                style={[
+                  styles.statCard,
+                  { backgroundColor: palette.card, borderColor: palette.border },
+                ]}
               >
-                Manage Brands
-              </Button>
-              <Button
-                mode="contained"
-                buttonColor={primaryColor}
-                onPress={handleManageCategories}
-                style={styles.button}
-                labelStyle={styles.buttonLabel}
+                <View style={[styles.statIconWrap, { backgroundColor: `${item.color}1A` }]}
+                >
+                  <Ionicons name={item.icon as any} size={22} color={item.color} />
+                </View>
+                <Text style={[styles.statValue, { color: palette.text }]}
+                >
+                  {item.value}
+                </Text>
+                <Text style={[styles.statLabel, { color: palette.icon }]}
+                >
+                  {item.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <SectionHeader title="Quick Actions" containerStyle={styles.sectionHeader} />
+          <View style={styles.actionGrid}>
+            {actions.map((action) => (
+              <View
+                key={action.id}
+                style={[
+                  styles.actionCard,
+                  { backgroundColor: palette.card, borderColor: palette.border },
+                ]}
               >
-                Manage Categories
-              </Button>
-              <Button
-                mode="contained"
-                buttonColor={primaryColor}
-                onPress={handleManageProducts}
-                style={styles.button}
-                labelStyle={styles.buttonLabel}
-              >
-                Manage Products
-              </Button>
-              <Button
-                mode="contained"
-                buttonColor={primaryColor}
-                onPress={handleManageOrders}
-                style={styles.button}
-                labelStyle={styles.buttonLabel}
-              >
-                Manage Orders
-              </Button>
-            </View>
+                <View style={styles.actionHeader}>
+                  <View style={[styles.actionIconWrap, { backgroundColor: `${palette.tint}1A` }]}
+                  >
+                    <Ionicons name={action.icon as any} size={20} color={palette.tint} />
+                  </View>
+                  <Text style={[styles.actionTitle, { color: palette.text }]}
+                  >
+                    {action.label}
+                  </Text>
+                </View>
+                <Text style={[styles.actionDescription, { color: palette.icon }]}
+                >
+                  {action.description}
+                </Text>
+                <Text
+                  onPress={action.onPress}
+                  style={[styles.actionLink, { color: palette.tint }]}
+                >
+                  Open
+                </Text>
+              </View>
+            ))}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -151,54 +186,95 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  // ScrollView's contentContainer for scrollable content with padding
-  // and centering (when short); ensures full scrollability if exceeds height.
-  // content remains inner wrapper for structure (no flex:1 to avoid ScrollView conflict).
   scrollContent: {
-    flexGrow: 1, // Allows scrolling + fills space when short
-    padding: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingBottom: 48, // Extra bottom padding like in (tabs)/index.tsx
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 40,
   },
-  content: {
-    // Inner content View for grouping; width constrained for readability
-    width: "100%",
-    maxWidth: 400, // Prevents overly wide buttons/text on large screens
-    alignItems: "center",
+  header: {
+    paddingHorizontal: 4,
+    paddingVertical: 16,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 20,
-    marginBottom: 24,
-    textAlign: "center",
-    opacity: 0.8,
+    fontSize: 15,
+    lineHeight: 20,
   },
-  placeholder: {
+  sectionHeader: {
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    paddingHorizontal: 4,
+  },
+  statCard: {
+    flexBasis: "31%",
+    minWidth: 110,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    alignItems: "flex-start",
+  },
+  statIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  actionGrid: {
+    gap: 12,
+    paddingHorizontal: 4,
+    paddingBottom: 32,
+  },
+  actionCard: {
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+  },
+  actionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
+  },
+  actionIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionTitle: {
     fontSize: 16,
-    textAlign: "center",
-    opacity: 0.6,
-    lineHeight: 24,
-    paddingHorizontal: 16,
-    marginBottom: 32, // Space before buttons
+    fontWeight: "700",
   },
-  // Styles for management buttons (match login.tsx patterns)
-  buttonContainer: {
-    width: "100%",
-    maxWidth: 300,
-    gap: 16, // Spacing between buttons
+  actionDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 12,
   },
-  button: {
-    padding: 4,
-    borderRadius: 8,
-  },
-  buttonLabel: {
-    fontSize: 16,
-    paddingVertical: 6,
+  actionLink: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

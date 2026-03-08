@@ -1,11 +1,11 @@
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
 import { getQueryString } from "@/helpers/queryParams";
-import { BrandInterface, BrandInput, StrapiBrandResponse, StrapiSingleBrandResponse } from "@/interface";
+import { BrandInterface, BrandInput, ApiResponseInterface } from "@/interface";
 
 // Re-export for convenience; types now centralized in interface/brand.ts to avoid duplication
-// (also re-export BrandInput/Strapi* for backward compat with form)
-export type { BrandInput, StrapiBrandResponse, StrapiSingleBrandResponse } from "@/interface";
+// (also re-export BrandInput for backward compat with form)
+export type { BrandInput } from "@/interface";
 
 // Filters for list
 export interface BrandFilters {
@@ -38,20 +38,20 @@ export const brandApi = {
     const populate = params?.populate || ["logo"];
     const query = getQueryString({ populate, ...params });
     const url = `${apiRoutes.BRANDS}${query}`;
-    return apiClient.get<StrapiBrandResponse>(url);
+    return apiClient.get<ApiResponseInterface<BrandInterface[]>>(url);
   },
 
   // GET /api/brands/{id}?populate=logo
   getBrand: (id: string | number) => {
     const query = getQueryString({ populate: ["logo"] });
     const url = `${apiRoutes.BRAND(id.toString())}${query}`;
-    return apiClient.get<StrapiSingleBrandResponse>(url);
+    return apiClient.get<ApiResponseInterface<BrandInterface>>(url);
   },
 
   // POST /api/brands with { data: cleaned } - fixes 400 by proper format/optional fields
   createBrand: (data: BrandInput) => {
     const cleaned = cleanBrandData(data);
-    return apiClient.post<StrapiSingleBrandResponse>(apiRoutes.BRANDS, {
+    return apiClient.post<ApiResponseInterface<BrandInterface>>(apiRoutes.BRANDS, {
       data: cleaned, // Strapi requires {data: {...}} wrapper for create
     });
   },
@@ -59,7 +59,7 @@ export const brandApi = {
   // PUT /api/brands/{id} with cleaned data - ensures no validation errors
   updateBrand: (id: string | number, data: Partial<BrandInput>) => {
     const cleaned = cleanBrandData(data);
-    return apiClient.put<StrapiSingleBrandResponse>(apiRoutes.BRAND(id.toString()), {
+    return apiClient.put<ApiResponseInterface<BrandInterface>>(apiRoutes.BRAND(id.toString()), {
       data: cleaned,
     });
   },

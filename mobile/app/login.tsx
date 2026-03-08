@@ -13,10 +13,10 @@ import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch } from "react-redux";
 
-import { loginSuccess } from "../reducers/auth.reducer";
-import { ThemedView } from "../components/ThemedView";
-import { useThemeColor } from "../hooks/useThemeColor";
-import { Colors } from "../constants/Colors";
+import { loginSuccess } from "@/reducers/auth.reducer";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Colors } from "@/constants/Colors";
 
 export default function LoginScreen() {
   const colorScheme =

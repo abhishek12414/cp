@@ -1,5 +1,6 @@
 import { apiClient } from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
+import { ApiResponseInterface } from "@/interface";
 
 export interface Product {
   id: string;
@@ -54,18 +55,6 @@ export interface Product {
   };
 }
 
-export interface ProductsResponse {
-  data: Product[];
-  meta: {
-    pagination: {
-      page: number;
-      pageSize: number;
-      pageCount: number;
-      total: number;
-    };
-  };
-}
-
 export interface ProductFilters {
   page?: number;
   pageSize?: number;
@@ -75,15 +64,15 @@ export interface ProductFilters {
 
 export const productApi = {
   getProducts: (params?: ProductFilters) => {
-    return apiClient.get<ProductsResponse>(apiRoutes.PRODUCTS, { params });
+    return apiClient.get<ApiResponseInterface<Product[]>>(apiRoutes.PRODUCTS, { params });
   },
 
   getProduct: (id: string) => {
-    return apiClient.get<{ data: Product }>(apiRoutes.PRODUCT(id));
+    return apiClient.get<ApiResponseInterface<Product>>(apiRoutes.PRODUCT(id));
   },
 
   searchProducts: (query: string, params?: ProductFilters) => {
-    return apiClient.get<ProductsResponse>(apiRoutes.SEARCH_PRODUCTS, {
+    return apiClient.get<ApiResponseInterface<Product[]>>(apiRoutes.SEARCH_PRODUCTS, {
       params: {
         query,
         ...params,

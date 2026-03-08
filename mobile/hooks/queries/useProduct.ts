@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/apis/apiClient";
 import { apiRoutes } from "@/apis/apiRoutes";
 import { getQueryString } from "@/helpers/queryParams";
-import { ApiResponse, ProductInterface } from "@/interface";
+import { ApiResponseInterface, ProductInterface } from "@/interface";
 
 const populate = "*";
 export type ProductFilters = Record<string, any>;
@@ -15,7 +15,7 @@ export const useProducts = (filters: Record<string, any>) => {
       const config = getQueryString({ populate, ...filters });
       const url = `${apiRoutes.PRODUCTS}${config}`;
 
-      const response = await apiClient.get<ApiResponse<ProductInterface[]>>(
+      const response = await apiClient.get<ApiResponseInterface<ProductInterface[]>>(
         url
       );
       return response.data.data;
@@ -35,7 +35,7 @@ export const useProductByDocumentId = (documentId: string) => {
       });
       const url = `${apiRoutes.PRODUCTS}${config}`;
 
-      const response = await apiClient.get<ApiResponse<ProductInterface[]>>(
+      const response = await apiClient.get<ApiResponseInterface<ProductInterface[]>>(
         url
       );
       return response.data.data[0] || null;

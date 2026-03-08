@@ -6,13 +6,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Button } from "react-native-paper";
 
-import { ThemedView } from "../../components/ThemedView";
-import { useThemeColor } from "../../hooks/useThemeColor";
-import { Colors } from "../../constants/Colors";
-import BrandCard from "../../components/ui/BrandCard";
-import { useBrand } from "../../hooks/queries/useBrand";
-import brandApi from "../../apis/brand.api";
-import { BrandInterface } from "../../interface";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Colors } from "@/constants/Colors";
+import BrandCard from "@/components/ui/BrandCard";
+import { useBrand } from "@/hooks/queries/useBrand";
+import brandApi from "@/apis/brand.api";
+import { BrandInterface } from "@/interface";
 
 /**
  * Manage Brands screen in admin panel.
@@ -70,9 +70,9 @@ export default function ManageBrandsScreen() {
     router.push("/(admin)/brands/new");
   };
 
-  const handleEditBrand = (id: BrandInterface["id"]) => {
+  const handleEditBrand = (documentId: string) => {
     // Navigate to form for edit (reuse same screen)
-    router.push(`/(admin)/brands/${id}`);
+    router.push(`/(admin)/brands/${documentId}`);
   };
 
   const handleDeleteBrand = (id: BrandInterface["id"], name: string) => {
@@ -91,9 +91,9 @@ export default function ManageBrandsScreen() {
     );
   };
 
-  const handleBrandPress = (id: BrandInterface["id"]) => {
+  const handleBrandPress = (documentId: string) => {
     // Optional: View details or default to edit
-    handleEditBrand(id);
+    handleEditBrand(documentId);
   };
 
   if (isLoading) {
@@ -155,11 +155,11 @@ export default function ManageBrandsScreen() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View style={styles.brandItem}>
-              <BrandCard data={item} onPress={handleBrandPress} />
+              <BrandCard data={item} onPress={() => handleBrandPress(item.documentId)} />
               <View style={styles.actions}>
                 <Button
                   mode="outlined"
-                  onPress={() => handleEditBrand(item.id)}
+                  onPress={() => handleEditBrand(item.documentId)}
                   style={styles.actionButton}
                 >
                   Edit

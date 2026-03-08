@@ -5,13 +5,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Button } from "react-native-paper";
+import { Image } from "expo-image";
 
-import { ThemedView } from "../../components/ThemedView";
-import { useThemeColor } from "../../hooks/useThemeColor";
-import { Colors } from "../../constants/Colors";
-import { useCategories } from "../../hooks/queries/useCategories";
-import categoryApi from "../../apis/category.api";
-import { CategoryInterface } from "../../interface";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Colors } from "@/constants/Colors";
+import { useCategories } from "@/hooks/queries/useCategories";
+import categoryApi from "@/apis/category.api";
+import { CategoryInterface } from "@/interface";
+import { getImageUrl } from "@/helpers/image";
 
 /**
  * Manage Categories screen in admin panel.
@@ -141,53 +143,64 @@ export default function ManageCategoriesScreen() {
         <FlatList
           data={categories}
           keyExtractor={(item) => item.documentId}
-          renderItem={({ item }) => (
-            <View style={styles.categoryItem}>
-              {/* Category info */}
-              <View style={styles.categoryInfo}>
-                {/* Initial avatar */}
-                <View style={[styles.avatar, { backgroundColor: primaryColor }]}>
-                  <Text style={styles.avatarText}>
-                    {item.name?.charAt(0)?.toUpperCase() || "?"}
-                  </Text>
-                </View>
-                <View style={styles.textBlock}>
-                  <Text style={styles.categoryName} numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                  {item.description ? (
-                    <Text style={styles.categoryDesc} numberOfLines={1}>
-                      {item.description}
+          renderItem={({ item }) => {
+            const imageUri = getImageUrl(item.image?.url || "");
+            return (
+              <View style={styles.categoryItem}>
+                {/* Category info */}
+                <View style={styles.categoryInfo}>
+                  {/* Initial avatar or Image */}
+                  <View style={[styles.avatar, { backgroundColor: primaryColor }]}>
+                    {imageUri ? (
+                      <Image
+                        source={{ uri: imageUri }}
+                        style={styles.avatarImage}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <Text style={styles.avatarText}>
+                        {item.name?.charAt(0)?.toUpperCase() || "?"}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={styles.textBlock}>
+                    <Text style={styles.categoryName} numberOfLines={1}>
+                      {item.name}
                     </Text>
-                  ) : (
-                    <Text style={styles.categoryDescEmpty}>No description</Text>
-                  )}
+                    {item.description ? (
+                      <Text style={styles.categoryDesc} numberOfLines={1}>
+                        {item.description}
+                      </Text>
+                    ) : (
+                      <Text style={styles.categoryDescEmpty}>No description</Text>
+                    )}
+                  </View>
+                </View>
+
+                {/* Action buttons */}
+                <View style={styles.actions}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => handleEditCategory(item.documentId)}
+                    style={styles.actionButton}
+                    compact
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    textColor="red"
+                    onPress={() => handleDeleteCategory(item.documentId, item.name)}
+                    style={styles.actionButton}
+                    disabled={deleteMutation.isPending}
+                    compact
+                  >
+                    Delete
+                  </Button>
                 </View>
               </View>
-
-              {/* Action buttons */}
-              <View style={styles.actions}>
-                <Button
-                  mode="outlined"
-                  onPress={() => handleEditCategory(item.documentId)}
-                  style={styles.actionButton}
-                  compact
-                >
-                  Edit
-                </Button>
-                <Button
-                  mode="outlined"
-                  textColor="red"
-                  onPress={() => handleDeleteCategory(item.documentId, item.name)}
-                  style={styles.actionButton}
-                  disabled={deleteMutation.isPending}
-                  compact
-                >
-                  Delete
-                </Button>
-              </View>
-            </View>
-          )}
+            );
+          }}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <Text style={styles.emptyText}>
@@ -249,6 +262,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   avatarText: {
     color: "#fff",

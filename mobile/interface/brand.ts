@@ -36,27 +36,3 @@ export interface BrandInput {
   // See: https://docs.strapi.io/dev-docs/api/rest/media-upload
   logo?: number | null;
 }
-
-// Strapi API response wrappers (for brand.api.ts)
-export interface StrapiBrandResponse {
-  data: {
-    id: number;
-    attributes: BrandInterface;
-    // documentId in v4+ Strapi
-  }[];
-  meta?: {
-    pagination?: {
-      page: number;
-      pageSize: number;
-      pageCount: number;
-      total: number;
-    };
-  };
-}
-
-export interface StrapiSingleBrandResponse {
-  data: {
-    id: number;
-    attributes: BrandInterface;
-  };
-}

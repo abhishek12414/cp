@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Searchbar } from "react-native-paper";
 import { useRouter } from "expo-router";
-import { Colors } from "../../constants/Colors";
-import { useThemeColor } from "../../hooks/useThemeColor";
+import { Colors } from "@/constants/Colors";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 type HeaderSearchProps = {
   placeholder?: string;
