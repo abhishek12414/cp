@@ -16,12 +16,12 @@ import { Button } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 
-import { ThemedView } from "../../../components/ThemedView";
-import { useThemeColor } from "../../../hooks/useThemeColor";
-import { Colors } from "../../../constants/Colors";
-import categoryApi, { CategoryInput } from "../../../apis/category.api";
-import { useCategoryByDocumentId } from "../../../hooks/queries/useCategories";
-import { getImageUrl } from "../../../helpers/image";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Colors } from "@/constants/Colors";
+import categoryApi, { CategoryInput } from "@/apis/category.api";
+import { useCategoryByDocumentId } from "@/hooks/queries/useCategories";
+import { getImageUrl } from "@/helpers/image";
 
 /**
  * Category Form screen for add/edit in admin panel.

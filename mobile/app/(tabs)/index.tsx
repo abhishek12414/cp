@@ -6,19 +6,19 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Avatar, Searchbar, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ThemedView } from "../../components/ThemedView";
-import { BannerCarousel } from "../../components/ui/BannerCarousel";
-import BrandCard from "../../components/ui/BrandCard";
-import { CategoryCard } from "../../components/ui/CategoryCard";
-import { DealCard } from "../../components/ui/DealCard";
-import { HorizontalScroller } from "../../components/ui/HorizontalScroller";
-import { OrderUploadButton } from "../../components/ui/OrderUploadButton";
-import { SectionHeader } from "../../components/ui/SectionHeader";
-import { ServiceCard } from "../../components/ui/ServiceCard";
-import { SmallProductStripItem } from "../../components/ui/SmallProductStripItem";
-import { TrendingCategoryItem } from "../../components/ui/TrendingCategoryItem";
-import { Colors } from "../../constants/Colors";
-import { useThemeColor } from "../../hooks/useThemeColor";
+import { ThemedView } from "@/components/ThemedView";
+import { BannerCarousel } from "@/components/ui/BannerCarousel";
+import BrandCard from "@/components/ui/BrandCard";
+import { CategoryCard } from "@/components/ui/CategoryCard";
+import { DealCard } from "@/components/ui/DealCard";
+import { HorizontalScroller } from "@/components/ui/HorizontalScroller";
+import { OrderUploadButton } from "@/components/ui/OrderUploadButton";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { ServiceCard } from "@/components/ui/ServiceCard";
+import { SmallProductStripItem } from "@/components/ui/SmallProductStripItem";
+import { TrendingCategoryItem } from "@/components/ui/TrendingCategoryItem";
+import { Colors } from "@/constants/Colors";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 // Import mock data for initial development
 import { useCategories, useProducts } from "@/hooks/queries";
@@ -31,7 +31,7 @@ import {
   recommendedProducts,
   services,
   trendingCategories,
-} from "../../mock/products";
+} from "@/mock/products";
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");

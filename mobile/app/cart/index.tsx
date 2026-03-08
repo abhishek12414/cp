@@ -6,15 +6,15 @@ import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
 import { useSelector, useDispatch } from "react-redux";
 
-import { ThemedView } from "../../components/ThemedView";
-import { useThemeColor } from "../../hooks/useThemeColor";
-import { Colors } from "../../constants/Colors";
-import { RootState } from "../../store";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Colors } from "@/constants/Colors";
+import { RootState } from "@/store";
 import {
   removeFromCart,
   updateQuantity,
   clearCart,
-} from "../../reducers/cart.reducer";
+} from "@/reducers/cart.reducer";
 
 export default function CartScreen() {
   const dispatch = useDispatch();

@@ -13,9 +13,9 @@ import {
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ThemedView } from "../../components/ThemedView";
-import { Colors } from "../../constants/Colors";
-import { useThemeColor } from "../../hooks/useThemeColor";
+import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 type UploadStep =
   | "permission"

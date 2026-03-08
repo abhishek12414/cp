@@ -3,9 +3,9 @@ import { StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ThemedView } from "../../components/ThemedView";
-import { useThemeColor } from "../../hooks/useThemeColor";
-import { Colors } from "../../constants/Colors";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Colors } from "@/constants/Colors";
 
 /**
  * Placeholder screen for managing orders.

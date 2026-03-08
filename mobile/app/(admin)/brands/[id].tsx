@@ -8,12 +8,12 @@ import { Button } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 
-import { ThemedView } from "../../../components/ThemedView";
-import { useThemeColor } from "../../../hooks/useThemeColor";
-import { Colors } from "../../../constants/Colors";
-import brandApi, { BrandInput } from "../../../apis/brand.api";
-import { BrandInterface } from "../../../interface";
-import { getImageUrl } from "../../../helpers/image";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Colors } from "@/constants/Colors";
+import brandApi, { BrandInput } from "@/apis/brand.api";
+import { BrandInterface } from "@/interface";
+import { getImageUrl } from "@/helpers/image";
 
 /**
  * Brand Form screen for add/edit in admin panel.
@@ -62,7 +62,7 @@ export default function BrandFormScreen() {
     queryKey: ["brand", id],
     queryFn: async () => {
       if (isEdit) {
-        const response = await brandApi.getBrand(id);
+        const response = await brandApi.getBrand(id); // documentId passed via 'id' param
         return response.data.data;
       }
       return null;
@@ -73,7 +73,7 @@ export default function BrandFormScreen() {
   // Populate form for edit (including logo preview from existing)
   useEffect(() => {
     if (isEdit && brandData) {
-      const attrs = brandData.attributes;
+      const attrs = brandData;
       setFormData({
         name: attrs.name,
         description: attrs.description || "",

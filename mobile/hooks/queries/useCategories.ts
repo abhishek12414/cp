@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/apis/apiClient";
 import { apiRoutes } from "@/apis/apiRoutes";
 import { getQueryString } from "@/helpers/queryParams";
-import { ApiResponse, CategoryInterface } from "@/interface";
+import { ApiResponseInterface, CategoryInterface } from "@/interface";
 import categoryApi from "@/apis/category.api";
 
 const populate = ["image"];
@@ -14,7 +14,7 @@ export const useCategories = () => {
     queryFn: async () => {
       const config = getQueryString({ populate });
       const url = `${apiRoutes.CATEGORIES}${config}`;
-      const response = await apiClient.get<ApiResponse<CategoryInterface[]>>(
+      const response = await apiClient.get<ApiResponseInterface<CategoryInterface[]>>(
         url
       );
       return response.data.data;

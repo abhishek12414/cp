@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/apis/apiClient";
 import { apiRoutes } from "@/apis/apiRoutes";
 import { getQueryString } from "@/helpers/queryParams";
-import { ApiResponse, BrandInterface } from "@/interface";
+import { ApiResponseInterface, BrandInterface } from "@/interface";
 
 const populate = ["logo"];
 
@@ -14,7 +14,7 @@ export const useBrand = () => {
       const config = getQueryString({ populate });
       const url = `${apiRoutes.BRANDS}${config}`;
 
-      const response = await apiClient.get<ApiResponse<BrandInterface[]>>(url);
+      const response = await apiClient.get<ApiResponseInterface<BrandInterface[]>>(url);
       return response.data.data;
     },
     initialData: [],

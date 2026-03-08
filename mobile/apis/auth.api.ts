@@ -1,5 +1,6 @@
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
+import { AuthResponseInterface } from "@/interface";
 
 export interface LoginPayload {
   identifier: string;
@@ -10,20 +11,6 @@ export interface RegisterPayload {
   username: string;
   email: string;
   password: string;
-}
-
-export interface AuthResponse {
-  jwt: string;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-    provider: string;
-    confirmed: boolean;
-    blocked: boolean;
-    createdAt: string;
-    updatedAt: string;
-  };
 }
 
 export interface ForgotPasswordPayload {
@@ -38,15 +25,15 @@ export interface ResetPasswordPayload {
 
 export const authApi = {
   login: (payload: LoginPayload) => {
-    return apiClient.post<AuthResponse>(apiRoutes.LOGIN, payload);
+    return apiClient.post<AuthResponseInterface>(apiRoutes.LOGIN, payload);
   },
 
   register: (payload: RegisterPayload) => {
-    return apiClient.post<AuthResponse>(apiRoutes.REGISTER, payload);
+    return apiClient.post<AuthResponseInterface>(apiRoutes.REGISTER, payload);
   },
 
   googleAuth: (token: string) => {
-    return apiClient.post<AuthResponse>(apiRoutes.GOOGLE_AUTH, { token });
+    return apiClient.post<AuthResponseInterface>(apiRoutes.GOOGLE_AUTH, { token });
   },
 
   forgotPassword: (payload: ForgotPasswordPayload) => {
@@ -54,18 +41,18 @@ export const authApi = {
   },
 
   resetPassword: (payload: ResetPasswordPayload) => {
-    return apiClient.post<{ user: AuthResponse["user"] }>(
+    return apiClient.post<{ user: AuthResponseInterface["user"] }>(
       apiRoutes.RESET_PASSWORD,
       payload
     );
   },
 
   getMe: () => {
-    return apiClient.get<AuthResponse["user"]>(apiRoutes.ME);
+    return apiClient.get<AuthResponseInterface["user"]>(apiRoutes.ME);
   },
 
-  updateUser: (id: string, data: Partial<AuthResponse["user"]>) => {
-    return apiClient.put<AuthResponse["user"]>(apiRoutes.USER(id), data);
+  updateUser: (id: string, data: Partial<AuthResponseInterface["user"]>) => {
+    return apiClient.put<AuthResponseInterface["user"]>(apiRoutes.USER(id), data);
   },
 };
 

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ThemedView } from "../../components/ThemedView";
+import { ThemedView } from "@/components/ThemedView";
 
 /**
  * Tab redirect wrapper for the admin panel.
