@@ -45,6 +45,10 @@ export default function AdminLayout() {
         options={{ title: "Manage Products" }} 
       />
       <Stack.Screen 
+        name="products/[id]" 
+        options={{ title: "Product Form" }} 
+      />
+      <Stack.Screen 
         name="orders" 
         options={{ title: "Manage Orders" }} 
       />

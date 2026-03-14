@@ -33,7 +33,7 @@ apiClient.interceptors.response.use(
       AsyncStorage.removeItem("auth_token");
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

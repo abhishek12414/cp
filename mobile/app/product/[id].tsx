@@ -12,6 +12,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useProductByDocumentId } from "@/hooks/queries";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { getImageUrl } from "@/helpers/image";
 
 const { width } = Dimensions.get("window");
 
@@ -32,14 +33,11 @@ export default function ProductScreen() {
   // Use fields returned from Strapi
   const brandName = product?.brand?.name;
   const categoryName = product?.category?.name;
-  const imageUrl =
-    product?.images && product.images.length > 0
-      ? product.images[0].url
-      : product?.bannerImage?.url || "";
-  const images = product?.images || [];
-  const attributes = product?.productAttributes || [];
+  const productImages = product?.images || [];
+  const attributes = product?.attributeValues || product?.productAttributes || [];
+  const stockValue = product?.stockQuantity ?? product?.stock ?? 0;
   const isLowStock =
-    !!product && product.stock <= (product.lowStockThreshold || 0);
+    !!product && stockValue <= (product.lowStockThreshold || 0);
   const isFeatured = !!product && !!product.isFeatured;
 
   const handleGoBack = () => {
@@ -107,37 +105,35 @@ export default function ProductScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           <View style={styles.carouselContainer}>
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={(e) => {
-                const offsetX = e.nativeEvent.contentOffset.x;
-                const index = Math.round(offsetX / width);
-                setActiveIndex(index);
-              }}
-            >
-              {images.length > 0 ? (
-                images.map((img) => (
+            {productImages.length > 0 ? (
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(e) => {
+                  const offsetX = e.nativeEvent.contentOffset.x;
+                  const index = Math.round(offsetX / width);
+                  setActiveIndex(index);
+                }}
+              >
+                {productImages.map((img, index) => (
                   <Image
-                    key={img.documentId}
-                    source={{ uri: img.url }}
+                    key={img.id || index}
+                    source={{ uri: getImageUrl(img.url) }}
                     style={styles.carouselImage}
                     contentFit="contain"
                   />
-                ))
-              ) : (
-                <Image
-                  source={{ uri: imageUrl }}
-                  style={styles.carouselImage}
-                  contentFit="contain"
-                />
-              )}
-            </ScrollView>
-            <View style={styles.carouselProgressContainer} pointerEvents="none">
-              <View style={styles.carouselSegments}>
-                {(images.length > 0 ? images : [{ documentId: imageUrl }]).map(
-                  (_, idx) => (
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.noImageContainer}>
+                <Text style={styles.noImageText}>No images available</Text>
+              </View>
+            )}
+            {productImages.length > 1 && (
+              <View style={styles.carouselProgressContainer} pointerEvents="none">
+                <View style={styles.carouselSegments}>
+                  {productImages.map((_, idx) => (
                     <View
                       key={idx}
                       style={[
@@ -145,10 +141,10 @@ export default function ProductScreen() {
                         idx === activeIndex ? styles.activeSegment : null,
                       ]}
                     />
-                  )
-                )}
+                  ))}
+                </View>
               </View>
-            </View>
+            )}
           </View>
 
           <View style={styles.detailsContainer}>
@@ -182,9 +178,9 @@ export default function ProductScreen() {
               <View style={{ flex: 1 }} />
               <Chip
                 style={styles.stockChip}
-                icon={product.stock > 0 ? "check" : "alert-circle"}
+                icon={stockValue > 0 ? "check" : "alert-circle"}
               >
-                {product.stock > 0 ? `In stock` : "Out of stock"}
+                {stockValue > 0 ? `In stock` : "Out of stock"}
               </Chip>
             </View>
 
@@ -280,7 +276,7 @@ export default function ProductScreen() {
               buttonColor={primaryColor}
               style={styles.addToCartButton}
               onPress={handleAddToCart}
-              disabled={product.stock <= 0}
+              disabled={stockValue <= 0}
             >
               Add to Cart
             </Button>
@@ -498,11 +494,21 @@ const styles = StyleSheet.create({
     width: width,
     height: width * 0.9,
     backgroundColor: "#ffffff",
-    // backgroundColor: "#f5f5f5",
   },
   carouselImage: {
     width: width,
     height: width * 0.9,
+  },
+  noImageContainer: {
+    width: width,
+    height: width * 0.9,
+    backgroundColor: "#f5f5f5",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noImageText: {
+    fontSize: 16,
+    color: "#999",
   },
   carouselProgressContainer: {
     width: "100%",
@@ -513,18 +519,20 @@ const styles = StyleSheet.create({
   carouselSegments: {
     width: "90%",
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
+    gap: 6,
   },
   segment: {
-    flex: 1,
-    height: 6,
-    backgroundColor: "#f0f0f0",
-    marginHorizontal: 4,
+    width: 8,
+    height: 8,
     borderRadius: 4,
+    backgroundColor: "#ddd",
   },
   activeSegment: {
-    backgroundColor: "#000",
+    backgroundColor: "#007AFF",
+    width: 20,
+    borderRadius: 4,
   },
   metaRow: {
     flexDirection: "row",

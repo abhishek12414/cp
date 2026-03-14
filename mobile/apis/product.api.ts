@@ -1,58 +1,15 @@
-import { apiClient } from "./apiClient";
+import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
-import { ApiResponseInterface } from "@/interface";
+import {
+  ApiResponseInterface,
+  ProductInput,
+  ProductInterface,
+} from "@/interface";
 
-export interface Product {
-  id: string;
-  attributes: {
-    name: string;
-    description: string;
-    price: number;
-    discountPrice?: number;
-    sku: string;
-    stock: number;
-    images: {
-      data: Array<{
-        id: number;
-        attributes: {
-          url: string;
-          formats: {
-            thumbnail: { url: string };
-            small: { url: string };
-            medium: { url: string };
-            large: { url: string };
-          };
-        };
-      }>;
-    };
-    category: {
-      data: {
-        id: number;
-        attributes: {
-          name: string;
-          slug: string;
-        };
-      };
-    };
-    brand: {
-      data: {
-        id: number;
-        attributes: {
-          name: string;
-          slug: string;
-          logo: {
-            data: {
-              attributes: {
-                url: string;
-              };
-            };
-          };
-        };
-      };
-    };
-    createdAt: string;
-    updatedAt: string;
-  };
+export interface ProductAttributeValueInput {
+  attribute: number;
+  value: string;
+  product?: number;
 }
 
 export interface ProductFilters {
@@ -64,20 +21,64 @@ export interface ProductFilters {
 
 export const productApi = {
   getProducts: (params?: ProductFilters) => {
-    return apiClient.get<ApiResponseInterface<Product[]>>(apiRoutes.PRODUCTS, { params });
+    return apiClient.get<ApiResponseInterface<ProductInterface[]>>(
+      apiRoutes.PRODUCTS,
+      {
+        params,
+      },
+    );
   },
 
   getProduct: (id: string) => {
-    return apiClient.get<ApiResponseInterface<Product>>(apiRoutes.PRODUCT(id));
+    return apiClient.get<ApiResponseInterface<ProductInterface>>(
+      apiRoutes.PRODUCT(id),
+    );
   },
 
   searchProducts: (query: string, params?: ProductFilters) => {
-    return apiClient.get<ApiResponseInterface<Product[]>>(apiRoutes.SEARCH_PRODUCTS, {
-      params: {
-        query,
-        ...params,
+    return apiClient.get<ApiResponseInterface<ProductInterface[]>>(
+      apiRoutes.SEARCH_PRODUCTS,
+      {
+        params: {
+          query,
+          ...params,
+        },
+      },
+    );
+  },
+
+  createProduct: (data: ProductInput) => {
+    return apiClient.post(apiRoutes.PRODUCTS, { data });
+  },
+
+  updateProduct: (documentId: string, data: Partial<ProductInput>) => {
+    return apiClient.put(apiRoutes.PRODUCT(documentId), { data });
+  },
+
+  deleteProduct: (documentId: string) => {
+    return apiClient.delete(apiRoutes.PRODUCT(documentId));
+  },
+
+  uploadImage: (file: FormData) => {
+    return apiClient.post("/api/upload", file, {
+      headers: {
+        "Content-Type": "multipart/form-data",
       },
     });
+  },
+
+  createAttributeValue: (data: ProductAttributeValueInput) => {
+    return apiClient.post(apiRoutes.PRODUCT_ATTRIBUTE_VALUES, { data });
+  },
+
+  updateAttributeValue: (
+    documentId: string,
+    data: ProductAttributeValueInput,
+  ) => {
+    return apiClient.put(
+      `${apiRoutes.PRODUCT_ATTRIBUTE_VALUES}/${documentId}`,
+      { data },
+    );
   },
 };
 

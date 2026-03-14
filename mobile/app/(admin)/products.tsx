@@ -1,19 +1,26 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "react-native-paper";
+import { router } from "expo-router";
+import { Image } from "expo-image";
 
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
+import { useProducts } from "@/hooks/queries";
+import { ProductInterface } from "@/interface";
+import productApi from "@/apis/product.api";
+import { getImageUrl } from "@/helpers/image";
 
 /**
- * Placeholder screen for managing products.
- * 
+ * Manage Products screen in admin panel.
+ *
  * Route: /admin/products
- * 
- * Backend: Uses Strapi's api::product.product content type (with EAV, brand/category links; see server/src/api/product and apis/product.api.ts).
- * Future: List/search products, CRUD, images, attributes.
+ *
+ * Displays list of products with add/edit/delete actions.
  */
 
 export default function ManageProductsScreen() {
@@ -23,31 +30,163 @@ export default function ManageProductsScreen() {
       : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
+  const { data: products = [], isLoading, error, refetch } = useProducts({});
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (documentId: string) => productApi.deleteProduct(documentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      Alert.alert("Success", "Product deleted successfully.");
+    },
+    onError: (err) => {
+      console.error("Delete product error:", err);
+      Alert.alert("Error", "Failed to delete product. Please try again.");
+    },
+  });
+
+  const handleAddProduct = () => {
+    router.push("/(admin)/products/new");
+  };
+
+  const handleEditProduct = (documentId: string) => {
+    router.push(`/(admin)/products/${documentId}`);
+  };
+
+  const handleDeleteProduct = (documentId: ProductInterface["documentId"], name: string) => {
+    Alert.alert(
+      "Confirm Delete",
+      `Are you sure you want to delete the product "${name}"? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteMutation.mutate(documentId),
+        },
+      ]
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+          <View style={styles.center}>
+            <Text>Loading products...</Text>
+          </View>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ThemedView style={styles.container}>
+        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+          <View style={styles.center}>
+            <Text>Error loading products: {(error as Error).message}</Text>
+            <Button onPress={() => refetch()}>Retry</Button>
+          </View>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      {/* SafeAreaView with edges excluding 'top' to prevent overlap with status bar
-          and the custom Stack header (from admin layout, where headerShown: true).
-          This ensures content doesn't get cut off by system UI elements like notches,
-          home indicator, or header inset. */}
-      <SafeAreaView 
-        style={styles.safeArea}
-        // Exclude top since header + StatusBar handle it; include others for bottom/sides
-        edges={['bottom', 'left', 'right']}
-      >
-        <View style={styles.content}>
-          <Text style={[styles.title, { color: primaryColor }]}>
-            Manage Products
-          </Text>
-          <Text style={styles.placeholder}>
-            This is a placeholder screen for product management.
-            {"\n\n"}
-            Features to implement: List/search (extend useProducts hook), add/edit/delete, 
-            stock/pricing, media uploads, EAV attrs.
-            {"\n\n"}
-            Navigate back via header or add UI controls later.
-          </Text>
+      <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: primaryColor }]}>Manage Products</Text>
+          <Button
+            mode="contained"
+            buttonColor={primaryColor}
+            onPress={handleAddProduct}
+            style={styles.addButton}
+          >
+            Add New
+          </Button>
         </View>
+
+        <FlatList
+          data={products}
+          keyExtractor={(item) => item.documentId}
+          renderItem={({ item }) => {
+            const productImages = item.images || [];
+            const hasImages = productImages.length > 0;
+
+            return (
+              <View style={styles.productItem}>
+                <View style={styles.productInfo}>
+                  {hasImages ? (
+                    <View style={styles.imageCarousel}>
+                      <FlatList
+                        data={productImages}
+                        keyExtractor={(img) => String(img.id)}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        renderItem={({ item: img }) => (
+                          <Image
+                            source={{ uri: getImageUrl(img.url) }}
+                            style={styles.productImage}
+                            contentFit="cover"
+                          />
+                        )}
+                        contentContainerStyle={styles.imageListContent}
+                      />
+                    </View>
+                  ) : (
+                    <View style={[styles.avatar, { backgroundColor: primaryColor }]}>
+                      <Text style={styles.avatarText}>
+                        {item.name?.charAt(0)?.toUpperCase() || "?"}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.textBlock}>
+                    <Text style={styles.productName} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    <Text style={styles.productMeta} numberOfLines={1}>
+                      {item.category?.name || "No category"}
+                    </Text>
+                    <Text style={styles.productPrice}>
+                      ₹{item.price?.toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.actions}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => handleEditProduct(item.documentId)}
+                    style={styles.actionButton}
+                    compact
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    textColor="red"
+                    onPress={() => handleDeleteProduct(item.documentId, item.name)}
+                    style={styles.actionButton}
+                    disabled={deleteMutation.isPending}
+                    compact
+                  >
+                    Delete
+                  </Button>
+                </View>
+              </View>
+            );
+          }}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No products found. Add one to get started.</Text>
+          }
+          refreshing={isLoading}
+          onRefresh={refetch}
+        />
       </SafeAreaView>
     </ThemedView>
   );
@@ -60,23 +199,99 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    padding: 24,
-    justifyContent: "center",
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 24,
-    textAlign: "center",
   },
-  placeholder: {
-    fontSize: 16,
+  addButton: {
+    paddingHorizontal: 8,
+  },
+  listContent: {
+    padding: 16,
+    flexGrow: 1,
+  },
+  productItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  productInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 8,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  avatarText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+  imageCarousel: {
+    marginRight: 12,
+  },
+  imageListContent: {
+    paddingRight: 8,
+  },
+  productImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 6,
+    backgroundColor: "#f0f0f0",
+  },
+  textBlock: {
+    flex: 1,
+  },
+  productName: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  productMeta: {
+    fontSize: 12,
+    opacity: 0.6,
+    marginTop: 2,
+  },
+  productPrice: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  actionButton: {
+    minWidth: 64,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  emptyText: {
     textAlign: "center",
     opacity: 0.6,
-    lineHeight: 24,
-    paddingHorizontal: 16,
+    marginTop: 32,
   },
 });
+

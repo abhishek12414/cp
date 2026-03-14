@@ -1,7 +1,7 @@
 // If you use react-native-dotenv or @env, uncomment the import above and
 // remove the fallback below. Expo also exposes public env vars prefixed with
 // EXPO_PUBLIC_. Use `EXPO_PUBLIC_API_URL` for apps built with EAS or Expo.
-export const API_URL = 'http://localhost:3001' //process.env.EXPO_PUBLIC_API_URL || process.env.API_URL;
+export const API_URL = "http://192.168.29.17:3010"; //process.env.EXPO_PUBLIC_API_URL || process.env.API_URL;
 const apiV1 = "/api";
 
 export const apiRoutes = {
@@ -28,6 +28,7 @@ export const apiRoutes = {
   PRODUCTS: `${apiV1}/products`,
   PRODUCT: (id: string) => `${apiV1}/products/${id}`,
   SEARCH_PRODUCTS: `${apiV1}/products/search`,
+  PRODUCT_ATTRIBUTE_VALUES: `${apiV1}/product-attribute-values`,
 
   // Cart
   CART: `${apiV1}/carts/me`,

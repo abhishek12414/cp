@@ -14,7 +14,8 @@
     "ios:staging": "APP_ENV=staging expo start --ios",
     "ios:prod": "APP_ENV=production expo start --ios",
     "web": "APP_ENV=development expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "lint:fix": "expo lint --fix"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

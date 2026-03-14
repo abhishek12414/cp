@@ -30,7 +30,7 @@ export const useProductByDocumentId = (documentId: string) => {
     queryKey: ["product", documentId],
     queryFn: async () => {
       const config = getQueryString({
-        populate,
+        populate: ["category", "brand", "images", "attributeValues", "attributeValues.attribute"],
         filters: { documentId: { $eq: documentId } },
       });
       const url = `${apiRoutes.PRODUCTS}${config}`;

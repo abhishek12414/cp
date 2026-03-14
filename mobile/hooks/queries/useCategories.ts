@@ -24,6 +24,22 @@ export const useCategories = () => {
   });
 };
 
+export const useCategoriesForProducts = () => {
+  return useQuery<CategoryInterface[]>({
+    queryKey: ["categories", "withAttributes"],
+    queryFn: async () => {
+      const config = getQueryString({ populate: ["attributes"] });
+      const url = `${apiRoutes.CATEGORIES}${config}`;
+      const response = await apiClient.get<ApiResponseInterface<CategoryInterface[]>>(
+        url
+      );
+      return response.data.data;
+    },
+    initialData: [],
+    staleTime: 0,
+  });
+};
+
 export const useCategoryByDocumentId = (
   documentId: CategoryInterface["documentId"]
 ) => {
