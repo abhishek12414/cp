@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
@@ -17,18 +25,18 @@ import { getImageUrl } from "@/helpers/image";
 
 /**
  * Brand Form screen for add/edit in admin panel.
- * 
+ *
  * Route: /admin/brands/[id] (use id='new' for create, or brand ID for edit)
- * 
+ *
  * Form fields based on Strapi brand schema: name, description, website, isActive, logo (media).
  * Uses React Query mutations for save to DB.
- * 
+ *
  * Navigation: Called from brands list (add/edit buttons).
  * Back to list on success; invalidate queries to refresh.
- * 
+ *
  * First part: Logo upload implemented - select from device (expo-image-picker), upload to
  * Strapi /api/upload , attach file ID to brand data (see schema and brand.api.ts).
- * 
+ *
  * Second part: Edit pre-fills all details including current logo preview/display.
  */
 
@@ -84,7 +92,7 @@ export default function BrandFormScreen() {
       });
       // Set preview URI for current logo (using helper)
       const logoUrl = getImageUrl(
-        attrs.logo?.data?.attributes?.url || attrs.logoUrl || ""
+        attrs.logo?.data?.attributes?.url || attrs.logoUrl || "",
       );
       if (logoUrl) {
         setSelectedLogoUri(logoUrl);
@@ -103,7 +111,10 @@ export default function BrandFormScreen() {
     onSuccess: () => {
       // Invalidate brands list to refresh
       queryClient.invalidateQueries({ queryKey: ["brands"] });
-      Alert.alert("Success", `Brand ${isEdit ? "updated" : "created"} successfully.`);
+      Alert.alert(
+        "Success",
+        `Brand ${isEdit ? "updated" : "created"} successfully.`,
+      );
       router.back(); // Return to brands list
     },
     onError: (err) => {
@@ -137,54 +148,72 @@ export default function BrandFormScreen() {
           style: "destructive",
           onPress: () => deleteMutation.mutate(id),
         },
-      ]
+      ],
     );
   };
 
   // Image picker + upload for logo (device library , Strapi media endpoint)
   const handlePickLogo = async () => {
-    // Permission request
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert("Permission required", "Allow photo access for logo upload.");
-      return;
-    }
+    try {
+      // Ask permission
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    // Pick image
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+      if (!permissionResult.granted) {
+        Alert.alert(
+          "Permission required",
+          "Allow photo access for logo upload.",
+        );
+        return;
+      }
 
-    if (!result.canceled && result.assets[0]) {
-      const uri = result.assets[0].uri;
+      // Open image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets?.length) return;
+
+      const asset = result.assets[0];
+      const uri = asset.uri;
+
       setSelectedLogoUri(uri);
 
-      // Upload to get Strapi file ID , attach to formData.logo
       try {
         setIsUploadingLogo(true);
 
-        // Fetch the image file as a Blob from the URI
-        const response = await fetch(uri);
-        const blob = await response.blob();
-
-        // Create FormData and append the blob as binary content
         const formDataUpload = new FormData();
-        formDataUpload.append("files", blob, `brand-logo-${Date.now()}.jpg`);
+
+        formDataUpload.append("files", {
+          uri: uri,
+          name: `brand-logo-${Date.now()}.jpg`,
+          type: asset.mimeType || "image/jpeg",
+        } as any);
 
         const uploadRes = await brandApi.uploadLogo(formDataUpload);
-        const uploadedFileId = uploadRes.data[0].id;
-        updateField("logo", uploadedFileId); // Set ID for save (Strapi attaches)
-        Alert.alert("Success", "Logo uploaded and ready.");
-      } catch (err) {
-        console.error("Logo upload error:", err);
-        Alert.alert("Error", "Failed to upload logo. Try again.");
+
+        const uploadedFileId = uploadRes.data?.[0]?.id;
+
+        if (!uploadedFileId) {
+          throw new Error("Upload failed: No file ID returned");
+        }
+
+        // Attach uploaded file ID to form
+        updateField("logo", uploadedFileId);
+
+        Alert.alert("Success", "Logo uploaded successfully.");
+      } catch (error: any) {
+        console.error("Logo upload error:", error?.response || error);
+
+        Alert.alert("Error", "Failed to upload logo. Please try again.");
         setSelectedLogoUri(null);
       } finally {
         setIsUploadingLogo(false);
       }
+    } catch {
+      Alert.alert("Error", "Unable to open image picker.");
     }
   };
 
@@ -209,7 +238,10 @@ export default function BrandFormScreen() {
     mutation.mutate(dataToSubmit);
   };
 
-  const updateField = (field: keyof BrandInput, value: string | boolean | number | null) => {
+  const updateField = (
+    field: keyof BrandInput,
+    value: string | boolean | number | null,
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -217,7 +249,10 @@ export default function BrandFormScreen() {
     return (
       <ThemedView style={styles.container}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+        <SafeAreaView
+          style={styles.safeArea}
+          edges={["bottom", "left", "right"]}
+        >
           <View style={styles.center}>
             <Text>Loading brand...</Text>
           </View>
@@ -230,7 +265,7 @@ export default function BrandFormScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       {/* SafeAreaView for headered admin screen */}
-      <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+      <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={[styles.title, { color: primaryColor }]}>
             {isEdit ? "Edit Brand" : "Add New Brand"}
@@ -290,7 +325,9 @@ export default function BrandFormScreen() {
             </View>
             {/* Note for edit: current logo shown ; upload new to replace */}
             <Text style={styles.note}>
-              {isEdit ? "Current logo shown above; pick new to replace." : "Optional logo upload."}
+              {isEdit
+                ? "Current logo shown above; pick new to replace."
+                : "Optional logo upload."}
             </Text>
 
             {/* Slug preview */}

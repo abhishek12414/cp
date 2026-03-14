@@ -831,7 +831,6 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
       >;
     publishedAt: Schema.Attribute.DateTime;
     sku: Schema.Attribute.String &
-      Schema.Attribute.Unique &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 50;
       }>;

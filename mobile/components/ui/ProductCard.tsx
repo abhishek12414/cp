@@ -1,8 +1,12 @@
-import React from "react";
-import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { IconButton, Text } from "react-native-paper";
+import { Image } from "expo-image";
 
 import { ProductInterface } from "@/interface";
+import { getImageUrl } from "@/helpers/image";
+
+const { width } = Dimensions.get("window");
 
 export type ProductCardProps = {
   data: ProductInterface;
@@ -30,12 +34,21 @@ const ProductCard = ({
     stock,
     lowStockThreshold,
   } = data;
-  const image =
-    images?.[0]?.url || "https://via.placeholder.com/180x180?text=No+Image";
+
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const productImages = images || [];
+  const hasMultipleImages = productImages.length > 1;
   const discountPrice = comparePrice;
   const hasDiscount =
     discountPrice !== undefined && discountPrice < price && discountPrice > 0;
-  const isLowStock = stock <= (lowStockThreshold || 0);
+  const stockValue = data.stockQuantity ?? stock ?? 0;
+  const isLowStock = stockValue <= (lowStockThreshold || 0);
+
+  const handleScroll = (event: any) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const index = Math.round(contentOffset / (width * 0.5 - 24));
+    setActiveImageIndex(Math.max(0, Math.min(index, productImages.length - 1)));
+  };
 
   return (
     <TouchableOpacity
@@ -43,7 +56,51 @@ const ProductCard = ({
       onPress={() => onPress(documentId)}
       activeOpacity={0.9}
     >
-      <Image source={{ uri: image }} style={styles.image} />
+      <View style={styles.imageContainer}>
+        {productImages.length > 0 ? (
+          <>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={handleScroll}
+              style={styles.imageScrollView}
+            >
+              {productImages.map((img, index) => (
+                <View key={img.id || index} style={styles.imageWrapper}>
+                  <Image
+                    source={{ uri: getImageUrl(img.url) }}
+                    style={styles.image}
+                    contentFit="cover"
+                  />
+                </View>
+              ))}
+            </ScrollView>
+            {hasMultipleImages && (
+              <View style={styles.imageIndicators}>
+                {productImages.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.indicatorDot,
+                      index === activeImageIndex && styles.activeIndicatorDot,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+          </>
+        ) : (
+          <View style={styles.imageWrapper}>
+            <Image
+              source={{ uri: "https://via.placeholder.com/180x180?text=No+Image" }}
+              style={styles.image}
+              contentFit="cover"
+            />
+          </View>
+        )}
+      </View>
+
       {isFeatured && (
         <View style={styles.featuredBadge}>
           <Text style={styles.featuredText}>Featured</Text>
@@ -69,6 +126,7 @@ const ProductCard = ({
           <IconButton icon="heart-outline" iconColor="#fff" size={20} />
         </TouchableOpacity>
       )}
+
       <View style={styles.content}>
         {brand && <Text style={styles.brand}>{brand.name}</Text>}
         <Text numberOfLines={2} style={styles.title}>
@@ -104,6 +162,8 @@ const ProductCard = ({
   );
 };
 
+const CARD_WIDTH = width * 0.5 - 24;
+
 const styles = StyleSheet.create({
   card: {
     flex: 1,
@@ -116,11 +176,45 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
+    maxWidth: CARD_WIDTH,
+  },
+  imageContainer: {
+    position: "relative",
+    height: 180,
+  },
+  imageScrollView: {
+    flex: 1,
+  },
+  imageWrapper: {
+    width: CARD_WIDTH,
+    height: 180,
   },
   image: {
     width: "100%",
-    height: 180,
+    height: "100%",
     backgroundColor: "#f5f5f5",
+  },
+  imageIndicators: {
+    position: "absolute",
+    bottom: 8,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 4,
+  },
+  indicatorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.6)",
+  },
+  activeIndicatorDot: {
+    backgroundColor: "#fff",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   featuredBadge: {
     position: "absolute",
@@ -130,6 +224,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    zIndex: 10,
   },
   featuredText: {
     color: "#000",
@@ -144,6 +239,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    zIndex: 10,
   },
   discountText: {
     color: "#fff",
@@ -158,6 +254,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    zIndex: 10,
   },
   lowStockText: {
     color: "#fff",
@@ -170,6 +267,7 @@ const styles = StyleSheet.create({
     right: 4,
     backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 20,
+    zIndex: 10,
   },
   content: {
     padding: 12,
@@ -238,3 +336,4 @@ const styles = StyleSheet.create({
 });
 
 export default ProductCard;
+

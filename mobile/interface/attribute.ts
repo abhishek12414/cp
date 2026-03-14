@@ -3,12 +3,13 @@ export interface AttributeInterface {
   documentId: string;
   name: string;
   slug: string;
-  type: string;
-  unit: string | null;
-  values: any[] | null;
-  isFilterable: boolean;
-  displayOrder: number;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
+  fieldType: "string" | "number" | "boolean" | "select" | "text";
+  unit?: string | null;
+  options?: string[] | null;
+  isFilterable?: boolean;
+  isRequired?: boolean;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
 }

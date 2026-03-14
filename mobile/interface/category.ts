@@ -1,3 +1,4 @@
+import { AttributeInterface } from "./attribute";
 import { ImageInterface } from "./image";
 
 export interface CategoryInterface {
@@ -17,4 +18,5 @@ export interface CategoryInterface {
       attributes: ImageInterface;
     } | null;
   } | null;
+  attributes?:   AttributeInterface[];
 }
