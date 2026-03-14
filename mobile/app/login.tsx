@@ -1,12 +1,12 @@
 import React from "react";
 import {
   StyleSheet,
-  SafeAreaView,
   View,
   Image,
   Text,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "react-native-paper";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";

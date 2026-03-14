@@ -1,5 +1,6 @@
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
+import uploadApi from "./upload.api";
 import {
   ApiResponseInterface,
   ProductInput,
@@ -59,13 +60,7 @@ export const productApi = {
     return apiClient.delete(apiRoutes.PRODUCT(documentId));
   },
 
-  uploadImage: (file: FormData) => {
-    return apiClient.post("/api/upload", file, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  },
+  uploadImage: uploadApi.uploadFile,
 
   createAttributeValue: (data: ProductAttributeValueInput) => {
     return apiClient.post(apiRoutes.PRODUCT_ATTRIBUTE_VALUES, { data });

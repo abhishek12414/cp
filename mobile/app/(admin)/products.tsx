@@ -117,26 +117,24 @@ export default function ManageProductsScreen() {
           renderItem={({ item }) => {
             const productImages = item.images || [];
             const hasImages = productImages.length > 0;
+            const imageCount = productImages.length;
+            const firstImage = hasImages ? productImages[0] : null;
 
             return (
               <View style={styles.productItem}>
                 <View style={styles.productInfo}>
-                  {hasImages ? (
-                    <View style={styles.imageCarousel}>
-                      <FlatList
-                        data={productImages}
-                        keyExtractor={(img) => String(img.id)}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        renderItem={({ item: img }) => (
-                          <Image
-                            source={{ uri: getImageUrl(img.url) }}
-                            style={styles.productImage}
-                            contentFit="cover"
-                          />
-                        )}
-                        contentContainerStyle={styles.imageListContent}
+                  {hasImages && firstImage ? (
+                    <View style={styles.imageContainer}>
+                      <Image
+                        source={{ uri: getImageUrl(firstImage.url) }}
+                        style={styles.productImage}
+                        contentFit="cover"
                       />
+                      {imageCount > 1 && (
+                        <View style={styles.imageCountBadge}>
+                          <Text style={styles.imageCountText}>+{imageCount - 1}</Text>
+                        </View>
+                      )}
                     </View>
                   ) : (
                     <View style={[styles.avatar, { backgroundColor: primaryColor }]}>
@@ -151,10 +149,24 @@ export default function ManageProductsScreen() {
                     </Text>
                     <Text style={styles.productMeta} numberOfLines={1}>
                       {item.category?.name || "No category"}
+                      {item.brand?.name ? ` • ${item.brand.name}` : ""}
                     </Text>
-                    <Text style={styles.productPrice}>
-                      ₹{item.price?.toFixed(2)}
-                    </Text>
+                    <View style={styles.priceRow}>
+                      <Text style={styles.productPrice}>
+                        ₹{item.price?.toFixed(2)}
+                      </Text>
+                      {item.stockQuantity !== undefined && (
+                        <Text style={[
+                          styles.stockText,
+                          item.stockQuantity === 0 ? styles.outOfStock : 
+                          item.stockQuantity < 5 ? styles.lowStock : styles.inStock
+                        ]}>
+                          {item.stockQuantity === 0 ? "Out of stock" :
+                           item.stockQuantity < 5 ? `Only ${item.stockQuantity} left` :
+                           "In stock"}
+                        </Text>
+                      )}
+                    </View>
                   </View>
                 </View>
                 <View style={styles.actions}>
@@ -222,7 +234,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
@@ -230,12 +242,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    marginRight: 8,
+    marginRight: 12,
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
+    width: 60,
+    height: 60,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -243,44 +255,82 @@ const styles = StyleSheet.create({
   avatarText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 18,
+    fontSize: 20,
   },
-  imageCarousel: {
+  imageContainer: {
+    width: 60,
+    height: 60,
     marginRight: 12,
-  },
-  imageListContent: {
-    paddingRight: 8,
+    position: "relative",
+    borderRadius: 10,
+    overflow: "hidden",
   },
   productImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    marginRight: 6,
+    width: 60,
+    height: 60,
+    borderRadius: 10,
     backgroundColor: "#f0f0f0",
+  },
+  imageCountBadge: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: "center",
+  },
+  imageCountText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "600",
   },
   textBlock: {
     flex: 1,
+    justifyContent: "center",
   },
   productName: {
     fontSize: 15,
     fontWeight: "600",
+    color: "#333",
   },
   productMeta: {
     fontSize: 12,
-    opacity: 0.6,
-    marginTop: 2,
+    color: "#666",
+    marginTop: 3,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: 8,
   },
   productPrice: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginTop: 2,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#2E7D32",
+  },
+  stockText: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  inStock: {
+    color: "#4CAF50",
+  },
+  lowStock: {
+    color: "#FF9800",
+  },
+  outOfStock: {
+    color: "#F44336",
   },
   actions: {
     flexDirection: "row",
-    gap: 6,
+    gap: 8,
   },
   actionButton: {
-    minWidth: 64,
+    minWidth: 60,
   },
   center: {
     flex: 1,

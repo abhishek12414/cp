@@ -61,7 +61,6 @@ export default function RootLayout() {
             <Stack.Screen name="category" />
             <Stack.Screen name="upload-order" />
             <Stack.Screen name="cart" />
-            <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>

@@ -3,9 +3,7 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -13,31 +11,29 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "react-native-paper";
-import * as ImagePicker from "expo-image-picker";
-import { Image } from "expo-image";
+import { Formik } from "formik";
 
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
+import FormField from "@/components/FormField";
 import brandApi, { BrandInput } from "@/apis/brand.api";
 import { BrandInterface } from "@/interface";
-import { getImageUrl } from "@/helpers/image";
+import { getImageUrl, extractMediaUrl, extractMediaId } from "@/helpers/image";
+import { generateSlug } from "@/helpers/dataFormatter";
+import {
+  brandValidationSchema,
+  brandInitialValues,
+  BrandFormValues,
+} from "@/helpers/validation/brand";
 
 /**
  * Brand Form screen for add/edit in admin panel.
  *
  * Route: /admin/brands/[id] (use id='new' for create, or brand ID for edit)
  *
- * Form fields based on Strapi brand schema: name, description, website, isActive, logo (media).
- * Uses React Query mutations for save to DB.
- *
- * Navigation: Called from brands list (add/edit buttons).
- * Back to list on success; invalidate queries to refresh.
- *
- * First part: Logo upload implemented - select from device (expo-image-picker), upload to
- * Strapi /api/upload , attach file ID to brand data (see schema and brand.api.ts).
- *
- * Second part: Edit pre-fills all details including current logo preview/display.
+ * Uses Formik for form state management and Yup for validation.
+ * Reusable FormField component handles different input types.
  */
 
 export default function BrandFormScreen() {
@@ -49,28 +45,18 @@ export default function BrandFormScreen() {
       : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
-  // Form state (extended for logo ID)
-  const [formData, setFormData] = useState<BrandInput>({
-    name: "",
-    description: "",
-    website: "",
-    isActive: true,
-    logo: null,
-  });
-
-  // State for selected logo image (URI for preview , before upload)
+  // State for selected logo image URI (for preview)
   const [selectedLogoUri, setSelectedLogoUri] = useState<string | null>(null);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   // Query client for invalidate
   const queryClient = useQueryClient();
 
-  // Load data for edit (pre-fills form , including current logo for display)
+  // Load data for edit (pre-fills form, including current logo for display)
   const { data: brandData, isLoading: isLoadingBrand } = useQuery({
     queryKey: ["brand", id],
     queryFn: async () => {
       if (isEdit) {
-        const response = await brandApi.getBrand(id); // documentId passed via 'id' param
+        const response = await brandApi.getBrand(id);
         return response.data.data;
       }
       return null;
@@ -78,44 +64,53 @@ export default function BrandFormScreen() {
     enabled: isEdit,
   });
 
-  // Populate form for edit (including logo preview from existing)
+  // Compute initial values for edit mode
+  const editInitialValues: BrandFormValues = useMemo(() => {
+    if (isEdit && brandData) {
+      return {
+        name: brandData.name,
+        description: brandData.description || "",
+        website: brandData.website || "",
+        isActive: brandData.isActive,
+        logo: extractMediaId(brandData.logo),
+      };
+    }
+    return brandInitialValues;
+  }, [brandData, isEdit]);
+
+  // Set logo preview when brand data loads
   useEffect(() => {
     if (isEdit && brandData) {
-      const attrs = brandData;
-      setFormData({
-        name: attrs.name,
-        description: attrs.description || "",
-        website: attrs.website || "",
-        isActive: attrs.isActive,
-        // Retain existing logo ID (null if user uploads new)
-        logo: attrs.logo?.data?.id || null,
-      });
-      // Set preview URI for current logo (using helper)
-      const logoUrl = getImageUrl(
-        attrs.logo?.data?.attributes?.url || attrs.logoUrl || "",
-      );
+      const logoUrl = extractMediaUrl(brandData.logo, brandData.logoUrl);
       if (logoUrl) {
         setSelectedLogoUri(logoUrl);
       }
     }
   }, [brandData, isEdit]);
 
-  // Mutation for create/update (logo ID attached if uploaded)
+  // Mutation for create/update
   const mutation = useMutation({
-    mutationFn: async (data: BrandInput) => {
+    mutationFn: async (data: BrandFormValues) => {
+      // Generate slug from name
+      const slug = generateSlug(data.name);
+
+      const payload: BrandInput = {
+        ...data,
+        slug,
+      };
+
       if (isEdit) {
-        return brandApi.updateBrand(id, data);
+        return brandApi.updateBrand(id, payload);
       }
-      return brandApi.createBrand(data);
+      return brandApi.createBrand(payload);
     },
     onSuccess: () => {
-      // Invalidate brands list to refresh
       queryClient.invalidateQueries({ queryKey: ["brands"] });
       Alert.alert(
         "Success",
-        `Brand ${isEdit ? "updated" : "created"} successfully.`,
+        `Brand ${isEdit ? "updated" : "created"} successfully.`
       );
-      router.back(); // Return to brands list
+      router.back();
     },
     onError: (err) => {
       console.error("Brand save error:", err);
@@ -148,101 +143,21 @@ export default function BrandFormScreen() {
           style: "destructive",
           onPress: () => deleteMutation.mutate(id),
         },
-      ],
+      ]
     );
   };
 
-  // Image picker + upload for logo (device library , Strapi media endpoint)
-  const handlePickLogo = async () => {
-    try {
-      // Ask permission
-      const permissionResult =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (!permissionResult.granted) {
-        Alert.alert(
-          "Permission required",
-          "Allow photo access for logo upload.",
-        );
-        return;
-      }
-
-      // Open image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
-      });
-
-      if (result.canceled || !result.assets?.length) return;
-
-      const asset = result.assets[0];
-      const uri = asset.uri;
-
-      setSelectedLogoUri(uri);
-
-      try {
-        setIsUploadingLogo(true);
-
-        const formDataUpload = new FormData();
-
-        formDataUpload.append("files", {
-          uri: uri,
-          name: `brand-logo-${Date.now()}.jpg`,
-          type: asset.mimeType || "image/jpeg",
-        } as any);
-
-        const uploadRes = await brandApi.uploadLogo(formDataUpload);
-
-        const uploadedFileId = uploadRes.data?.[0]?.id;
-
-        if (!uploadedFileId) {
-          throw new Error("Upload failed: No file ID returned");
-        }
-
-        // Attach uploaded file ID to form
-        updateField("logo", uploadedFileId);
-
-        Alert.alert("Success", "Logo uploaded successfully.");
-      } catch (error: any) {
-        console.error("Logo upload error:", error?.response || error);
-
-        Alert.alert("Error", "Failed to upload logo. Please try again.");
-        setSelectedLogoUri(null);
-      } finally {
-        setIsUploadingLogo(false);
-      }
-    } catch {
-      Alert.alert("Error", "Unable to open image picker.");
-    }
+  const handleSubmit = (values: BrandFormValues) => {
+    mutation.mutate(values);
   };
 
-  const slugValue = useMemo(() => {
-    return formData.name
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-  }, [formData.name]);
-
-  const handleSubmit = () => {
-    if (!formData.name.trim()) {
-      Alert.alert("Validation", "Name is required.");
-      return;
-    }
-    // Generate slug: lowercase + replace spaces with hyphen
-    const dataToSubmit: BrandInput = {
-      ...formData,
-      slug: slugValue,
-    };
-    mutation.mutate(dataToSubmit);
+  const handleLogoUpload = (fileId: number, uri: string) => {
+    setSelectedLogoUri(uri);
   };
 
-  const updateField = (
-    field: keyof BrandInput,
-    value: string | boolean | number | null,
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Compute slug preview from form values
+  const getSlugPreview = (name: string) => {
+    return generateSlug(name);
   };
 
   if (isLoadingBrand) {
@@ -264,114 +179,118 @@ export default function BrandFormScreen() {
   return (
     <ThemedView style={styles.container}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      {/* SafeAreaView for headered admin screen */}
       <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={[styles.title, { color: primaryColor }]}>
-            {isEdit ? "Edit Brand" : "Add New Brand"}
-          </Text>
+        <Formik
+          initialValues={editInitialValues}
+          validationSchema={brandValidationSchema}
+          onSubmit={handleSubmit}
+          enableReinitialize
+        >
+          {({ handleSubmit, values, isSubmitting }) => (
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+              <Text style={[styles.title, { color: primaryColor }]}>
+                {isEdit ? "Edit Brand" : "Add New Brand"}
+              </Text>
 
-          {/* Form fields matching schema */}
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Brand Name (required, unique)"
-              value={formData.name}
-              onChangeText={(text) => updateField("name", text)}
-            />
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              placeholder="Description"
-              value={formData.description}
-              onChangeText={(text) => updateField("description", text)}
-              multiline
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Website (e.g., https://example.com)"
-              value={formData.website}
-              onChangeText={(text) => updateField("website", text)}
-              keyboardType="url"
-            />
-            <View style={styles.switchRow}>
-              <Text>Active Brand</Text>
-              <Switch
-                value={formData.isActive}
-                onValueChange={(value) => updateField("isActive", value)}
-              />
-            </View>
-
-            {/* Logo upload section - implemented: pick from device , preview , upload to Strapi
-                Pre-fills current logo for edit (displayed below) , allows replace. */}
-            <Text style={styles.label}>Brand Logo</Text>
-            <View style={styles.logoPreviewContainer}>
-              {selectedLogoUri ? (
-                <Image
-                  source={{ uri: selectedLogoUri }}
-                  style={styles.logoPreview}
-                  contentFit="contain"
+              <View style={styles.form}>
+                {/* Brand Name */}
+                <FormField
+                  name="name"
+                  type="text"
+                  label="Brand Name"
+                  placeholder="Brand Name (required, unique)"
+                  required
+                  hint="Required · Unique · 2-100 characters"
                 />
-              ) : (
-                <Text style={styles.noLogoText}>No logo selected</Text>
+
+                {/* Description */}
+                <FormField
+                  name="description"
+                  type="textarea"
+                  label="Description"
+                  placeholder="Description"
+                  hint="Optional · Max 500 characters"
+                />
+
+                {/* Website */}
+                <FormField
+                  name="website"
+                  type="url"
+                  label="Website"
+                  placeholder="Website (e.g., https://example.com)"
+                  hint="Optional · Valid URL format"
+                />
+
+                {/* Active Switch */}
+                <FormField
+                  name="isActive"
+                  type="switch"
+                  label="Active Brand"
+                />
+
+                {/* Logo Upload */}
+                <FormField
+                  name="logo"
+                  type="image"
+                  label="Brand Logo"
+                  imageUri={selectedLogoUri}
+                  onImageUpload={handleLogoUpload}
+                  imagePlaceholder="No logo selected"
+                  imageButtonText="Pick & Upload Logo"
+                  imageSize={100}
+                  imageNote={
+                    isEdit
+                      ? "Current logo shown above; pick new to replace."
+                      : "Optional logo upload."
+                  }
+                />
+
+                {/* Slug Preview */}
+                <Text style={styles.label}>Slug (auto)</Text>
+                <View style={styles.slugBox}>
+                  <Text style={styles.slugText}>
+                    {getSlugPreview(values.name) || "-"}
+                  </Text>
+                </View>
+                <Text style={styles.note}>
+                  Slug is generated from the name using lowercase and hyphens.
+                </Text>
+              </View>
+
+              <Button
+                mode="contained"
+                buttonColor={primaryColor}
+                onPress={() => handleSubmit()}
+                loading={mutation.isPending}
+                disabled={mutation.isPending}
+                style={styles.submitButton}
+              >
+                {isEdit ? "Update Brand" : "Create Brand"}
+              </Button>
+
+              {isEdit && (
+                <Button
+                  mode="outlined"
+                  textColor="red"
+                  onPress={handleDelete}
+                  style={styles.deleteButton}
+                  disabled={deleteMutation.isPending || mutation.isPending}
+                >
+                  Delete Brand
+                </Button>
               )}
+
               <Button
                 mode="outlined"
-                onPress={handlePickLogo}
-                disabled={isUploadingLogo}
-                style={styles.pickButton}
+                onPress={() => router.back()}
+                style={styles.cancelButton}
+                disabled={mutation.isPending}
               >
-                {isUploadingLogo ? "Uploading..." : "Pick & Upload Logo"}
+                Cancel
               </Button>
-            </View>
-            {/* Note for edit: current logo shown ; upload new to replace */}
-            <Text style={styles.note}>
-              {isEdit
-                ? "Current logo shown above; pick new to replace."
-                : "Optional logo upload."}
-            </Text>
-
-            {/* Slug preview */}
-            <Text style={styles.label}>Slug (auto)</Text>
-            <View style={styles.slugBox}>
-              <Text style={styles.slugText}>{slugValue || "-"}</Text>
-            </View>
-            <Text style={styles.note}>
-              Slug is generated from the name using lowercase and hyphens.
-            </Text>
-          </View>
-
-          <Button
-            mode="contained"
-            buttonColor={primaryColor}
-            onPress={handleSubmit}
-            loading={mutation.isPending || isUploadingLogo}
-            disabled={mutation.isPending || isUploadingLogo}
-            style={styles.submitButton}
-          >
-            {isEdit ? "Update Brand" : "Create Brand"}
-          </Button>
-
-          {isEdit && (
-            <Button
-              mode="outlined"
-              textColor="red"
-              onPress={handleDelete}
-              style={styles.deleteButton}
-              disabled={deleteMutation.isPending || mutation.isPending}
-            >
-              Delete Brand
-            </Button>
+            </ScrollView>
           )}
-
-          <Button
-            mode="outlined"
-            onPress={() => router.back()}
-            style={styles.cancelButton}
-            disabled={mutation.isPending}
-          >
-            Cancel
-          </Button>
-        </ScrollView>
+        </Formik>
       </SafeAreaView>
     </ThemedView>
   );
@@ -398,53 +317,15 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    backgroundColor: "#fff",
-  },
-  multiline: {
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  note: {
-    opacity: 0.6,
-    marginBottom: 16,
-    fontStyle: "italic",
-  },
-  // Styles for logo upload/preview (handles display for edit pre-fill and new selection)
   label: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 8,
   },
-  logoPreviewContainer: {
-    alignItems: "center",
+  note: {
+    opacity: 0.6,
     marginBottom: 16,
-  },
-  logoPreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: "#f0f0f0",
-  },
-  noLogoText: {
-    fontSize: 14,
-    opacity: 0.5,
-    marginBottom: 8,
-  },
-  pickButton: {
-    marginTop: 8,
+    fontStyle: "italic",
   },
   slugBox: {
     borderWidth: 1,
@@ -477,3 +358,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+

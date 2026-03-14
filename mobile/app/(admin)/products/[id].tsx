@@ -15,24 +15,32 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "react-native-paper";
-import * as ImagePicker from "expo-image-picker";
+import { Formik } from "formik";
 import { Image } from "expo-image";
 
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
+import FormField from "@/components/FormField";
 import {
   useBrand,
   useCategoriesForProducts,
   useProductByDocumentId,
 } from "@/hooks/queries";
 import productApi from "@/apis/product.api";
+import uploadApi from "@/apis/upload.api";
 import {
   AttributeInterface,
   ProductAttributeInterface,
   ProductInput,
 } from "@/interface";
 import { getImageUrl } from "@/helpers/image";
+import { generateSlug } from "@/helpers/dataFormatter";
+import {
+  productValidationSchema,
+  productInitialValues,
+  ProductFormValues,
+} from "@/helpers/validation/product";
 
 interface ImageWithMeta {
   uri: string;
@@ -144,40 +152,25 @@ export default function ProductFormScreen() {
   const { data: categories = [] } = useCategoriesForProducts();
   const { data: brands = [] } = useBrand();
   const { data: product, isLoading: isLoadingProduct } = useProductByDocumentId(
-    isEdit ? id : "",
+    isEdit ? id : ""
   );
 
-  const [formData, setFormData] = useState<ProductInput>({
-    name: "",
-    description: "",
-    price: 0,
-    sku: "",
-    stockQuantity: 0,
-    category: null,
-    brand: null,
-    images: [],
-  });
+  // State for images
+  const [imageList, setImageList] = useState<ImageWithMeta[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const [priceInput, setPriceInput] = useState("0");
-  const [stockInput, setStockInput] = useState("0");
+  // State for attribute values
   const [attributeValues, setAttributeValues] = useState<
     Record<number, AttributeValueState>
   >({});
   const [categoryAttributeCache, setCategoryAttributeCache] = useState<
     Record<string, Record<number, AttributeValueState>>
   >({});
-  const [imageList, setImageList] = useState<ImageWithMeta[]>([]);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const selectedCategory = useMemo(() => {
-    return categories.find(
-      (categoryItem) => categoryItem.documentId === formData.category,
-    );
-  }, [categories, formData.category]);
-
-  useEffect(() => {
+  // Compute initial values for edit mode
+  const editInitialValues: ProductFormValues = useMemo(() => {
     if (isEdit && product) {
-      setFormData({
+      return {
         name: product.name || "",
         description: product.description || "",
         price: product.price || 0,
@@ -186,22 +179,26 @@ export default function ProductFormScreen() {
         category: product.category?.documentId || null,
         brand: product.brand?.documentId || null,
         images: [],
-      });
-      setPriceInput(String(product.price ?? 0));
-      setStockInput(String(product.stockQuantity ?? product.stock ?? 0));
+      };
+    }
+    return productInitialValues;
+  }, [product, isEdit]);
 
+  // Set images and attributes when product data loads
+  useEffect(() => {
+    if (isEdit && product) {
       if (product.images?.length) {
         const existingImages: ImageWithMeta[] = product.images.map(
           (imageItem) => ({
             uri: getImageUrl(imageItem.url) || "",
             id: imageItem.id,
             isExisting: true,
-          }),
+          })
         );
         setImageList(existingImages);
       }
 
-      // Use both possible keys for attribute values from Strapi
+      // Load existing attribute values
       const rawAttributeValues =
         product.attributeValues || product.productAttributes || [];
       const existingAttributes = Array.isArray(rawAttributeValues)
@@ -210,8 +207,6 @@ export default function ProductFormScreen() {
 
       const existingMap: Record<number, AttributeValueState> = {};
       existingAttributes.forEach((valueItem: ProductAttributeInterface) => {
-        // The attribute is nested inside valueItem.attribute
-        // valueItem structure: { id, documentId, value, attribute: { id, name, fieldType, ... } }
         const attr = valueItem.attribute;
         if (attr && typeof attr === "object" && "id" in attr) {
           existingMap[attr.id] = {
@@ -233,106 +228,43 @@ export default function ProductFormScreen() {
     }
   }, [isEdit, product]);
 
-  useEffect(() => {
-    const categoryId = formData.category || "";
-    if (!selectedCategory?.attributes?.length) {
-      setAttributeValues({});
-      return;
-    }
+  // Get selected category and its attributes
+  const getSelectedCategory = (categoryId: string | null) => {
+    return categories.find((cat) => cat.documentId === categoryId);
+  };
 
-    const cached = categoryId ? categoryAttributeCache[categoryId] : undefined;
-    if (cached) {
-      setAttributeValues(cached);
-      return;
-    }
-
-    if (!isEdit) {
-      setAttributeValues({});
-      return;
-    }
-
+  // Handle attribute changes
+  const handleAttributeChange = (
+    attribute: AttributeInterface,
+    value: string,
+    categoryId: string | null
+  ) => {
     setAttributeValues((prev) => {
-      const allowed = selectedCategory.attributes || [];
-      const retained: Record<number, AttributeValueState> = {};
-      Object.entries(prev).forEach(([key, value]) => {
-        const attrId = Number(key);
-        if (allowed.some((attr) => attr.id === attrId)) {
-          retained[attrId] = value;
-        }
-      });
+      const next = {
+        ...prev,
+        [attribute.id]: {
+          ...prev[attribute.id],
+          value,
+        },
+      };
       if (categoryId) {
         setCategoryAttributeCache((cache) => ({
           ...cache,
-          [categoryId]: retained,
+          [categoryId]: next,
         }));
       }
-      return retained;
+      return next;
     });
-  }, [categoryAttributeCache, formData.category, selectedCategory]);
+  };
 
-  const mutation = useMutation({
-    mutationFn: async (payload: ProductInput) => {
-      if (isEdit && product?.id) {
-        const attributeValueIds = await saveAttributeValues(product.id);
-        return productApi.updateProduct(id, {
-          ...payload,
-          attributeValues: attributeValueIds,
-        });
-      }
-
-      const created = await productApi.createProduct(payload);
-      const createdProduct = created?.data?.data;
-      if (createdProduct?.id && createdProduct?.documentId) {
-        const attributeValueIds = await saveAttributeValues(createdProduct.id);
-        await productApi.updateProduct(createdProduct.documentId, {
-          attributeValues: attributeValueIds,
-        });
-      }
-      return created;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      if (isEdit) {
-        queryClient.invalidateQueries({ queryKey: ["product", id] });
-      }
-      setCategoryAttributeCache((prev) => {
-        if (!formData.category) {
-          return prev;
-        }
-        return {
-          ...prev,
-          [formData.category as string]: attributeValues,
-        };
-      });
-      Alert.alert(
-        "Success",
-        `Product ${isEdit ? "updated" : "created"} successfully.`,
-      );
-      router.back();
-    },
-    onError: (err) => {
-      console.error("Product save error:", err);
-      Alert.alert(
-        "Error",
-        `Failed to ${isEdit ? "update" : "create"} product.`,
-      );
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (documentId: string) => productApi.deleteProduct(documentId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      Alert.alert("Success", "Product deleted successfully.");
-      router.back();
-    },
-    onError: (err) => {
-      console.error("Delete product error:", err);
-      Alert.alert("Error", "Failed to delete product. Please try again.");
-    },
-  });
-
-  const saveAttributeValues = async (productId: number) => {
+  // Save attribute values to backend
+  const saveAttributeValues = async (
+    productId: number,
+    categoryId: string | null
+  ) => {
+    const selectedCategory = categoryId
+      ? getSelectedCategory(categoryId)
+      : null;
     const attributes = selectedCategory?.attributes || [];
     const requests = attributes
       .map((attribute) => {
@@ -368,55 +300,72 @@ export default function ProductFormScreen() {
     return ids.filter(Boolean);
   };
 
-  const updateField = (
-    field: keyof ProductInput,
-    value: string | number | null,
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  // Mutation for create/update
+  const mutation = useMutation({
+    mutationFn: async (values: ProductFormValues) => {
+      // Generate slug from name
+      const slug = generateSlug(values.name);
 
-  const slugValue = useMemo(() => {
-    return formData.name
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-  }, [formData.name]);
+      const payload: ProductInput = {
+        ...values,
+        slug,
+        images: imageList.map((img) => img.id).filter(Boolean) as number[],
+      };
 
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      Alert.alert("Validation", "Product name is required.");
-      return;
-    }
-    if (!formData.category) {
-      Alert.alert("Validation", "Please select a category.");
-      return;
-    }
-    if (!priceInput || Number.isNaN(Number(priceInput))) {
-      Alert.alert("Validation", "Please enter a valid price.");
-      return;
-    }
+      if (isEdit && product?.id) {
+        const attributeValueIds = await saveAttributeValues(
+          product.id,
+          values.category
+        );
+        return productApi.updateProduct(id, {
+          ...payload,
+          attributeValues: attributeValueIds,
+        });
+      }
 
-    const attributes = selectedCategory?.attributes || [];
-    const missingRequired = attributes.find((attribute) => {
-      const value = attributeValues[attribute.id]?.value?.trim();
-      return attribute.isRequired && !value;
-    });
-    if (missingRequired) {
-      Alert.alert("Validation", `Please provide ${missingRequired.name}.`);
-      return;
-    }
+      const created = await productApi.createProduct(payload);
+      const createdProduct = created?.data?.data;
+      if (createdProduct?.id && createdProduct?.documentId) {
+        const attributeValueIds = await saveAttributeValues(
+          createdProduct.id,
+          values.category
+        );
+        await productApi.updateProduct(createdProduct.documentId, {
+          attributeValues: attributeValueIds,
+        });
+      }
+      return created;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: ["product", id] });
+      }
+      Alert.alert(
+        "Success",
+        `Product ${isEdit ? "updated" : "created"} successfully.`
+      );
+      router.back();
+    },
+    onError: (err) => {
+      console.error("Product save error:", err);
+      Alert.alert("Error", `Failed to ${isEdit ? "update" : "create"} product.`);
+    },
+  });
 
-    const payload: ProductInput = {
-      ...formData,
-      slug: slugValue,
-      price: Number(priceInput),
-      stockQuantity: Number(stockInput || 0),
-      images: imageList.map((img) => img.id).filter(Boolean) as number[],
-    };
-
-    mutation.mutate(payload);
-  };
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (documentId: string) => productApi.deleteProduct(documentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      Alert.alert("Success", "Product deleted successfully.");
+      router.back();
+    },
+    onError: (err) => {
+      console.error("Delete product error:", err);
+      Alert.alert("Error", "Failed to delete product. Please try again.");
+    },
+  });
 
   const handleDelete = () => {
     Alert.alert(
@@ -429,25 +378,44 @@ export default function ProductFormScreen() {
           style: "destructive",
           onPress: () => deleteMutation.mutate(id),
         },
-      ],
+      ]
     );
   };
 
+  const handleSubmit = (values: ProductFormValues) => {
+    // Validate required attributes
+    const selectedCategory = getSelectedCategory(values.category);
+    const attributes = selectedCategory?.attributes || [];
+    const missingRequired = attributes.find((attribute) => {
+      const attrValue = attributeValues[attribute.id]?.value?.trim();
+      return attribute.isRequired && !attrValue;
+    });
+
+    if (missingRequired) {
+      Alert.alert("Validation", `Please provide ${missingRequired.name}.`);
+      return;
+    }
+
+    mutation.mutate(values);
+  };
+
+  // Handle image picker
   const handlePickImage = async () => {
     try {
+      const ImagePicker = require("expo-image-picker");
       const permissionResult =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
         Alert.alert(
           "Permission required",
-          "Allow photo access for image upload.",
+          "Allow photo access for image upload."
         );
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsEditing: true,
         quality: 0.8,
       });
@@ -461,15 +429,13 @@ export default function ProductFormScreen() {
         setIsUploadingImage(true);
 
         const formDataUpload = new FormData();
-
         formDataUpload.append("files", {
           uri: uri,
           name: `product-image-${Date.now()}.jpg`,
           type: asset.mimeType || "image/jpeg",
         } as any);
 
-        const uploadRes = await productApi.uploadImage(formDataUpload);
-
+        const uploadRes = await uploadApi.uploadFile(formDataUpload);
         const uploadedFileId = uploadRes.data?.[0]?.id;
 
         if (!uploadedFileId) {
@@ -480,13 +446,16 @@ export default function ProductFormScreen() {
           ...prev,
           { uri, id: uploadedFileId, isExisting: false },
         ]);
-      } catch {
-        Alert.alert("Error", "Failed to upload image. Try again.");
+        Alert.alert("Success", "Image uploaded successfully.");
+      } catch (error: any) {
+        console.error("Image upload error:", error?.response?.data || error?.message || error);
+        Alert.alert("Error", error?.response?.data?.error?.message || "Failed to upload image. Try again.");
       } finally {
         setIsUploadingImage(false);
       }
-    } catch {
-      Alert.alert("Error", "Unable to open image picker.");
+    } catch (error: any) {
+      console.error("Image picker error:", error?.message || error);
+      Alert.alert("Error", error?.message || "Unable to open image picker. Please check app permissions.");
     }
   };
 
@@ -494,27 +463,9 @@ export default function ProductFormScreen() {
     setImageList((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAttributeChange = (
-    attribute: AttributeInterface,
-    value: string,
-  ) => {
-    setAttributeValues((prev) => {
-      const next = {
-        ...prev,
-        [attribute.id]: {
-          ...prev[attribute.id],
-          value,
-        },
-      };
-      const categoryId = formData.category;
-      if (categoryId) {
-        setCategoryAttributeCache((cache) => ({
-          ...cache,
-          [categoryId]: next,
-        }));
-      }
-      return next;
-    });
+  // Compute slug preview
+  const getSlugPreview = (name: string) => {
+    return generateSlug(name);
   };
 
   if (isLoadingProduct) {
@@ -533,266 +484,273 @@ export default function ProductFormScreen() {
     );
   }
 
-  const categoryAttributes = selectedCategory?.attributes || [];
-
   return (
     <ThemedView style={styles.container}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={[styles.title, { color: primaryColor }]}>
-            {isEdit ? "Edit Product" : "Add New Product"}
-          </Text>
+        <Formik
+          initialValues={editInitialValues}
+          validationSchema={productValidationSchema}
+          onSubmit={handleSubmit}
+          enableReinitialize
+        >
+          {({ handleSubmit, values, setFieldValue }) => {
+            const selectedCategory = getSelectedCategory(values.category);
+            const categoryAttributes = selectedCategory?.attributes || [];
 
-          <View style={styles.form}>
-            <Text style={styles.label}>
-              Product Name <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. LED Bulb 9W"
-              value={formData.name}
-              onChangeText={(text) => updateField("name", text)}
-              autoCapitalize="words"
-            />
+            return (
+              <ScrollView contentContainerStyle={styles.scrollContent}>
+                <Text style={[styles.title, { color: primaryColor }]}>
+                  {isEdit ? "Edit Product" : "Add New Product"}
+                </Text>
 
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              placeholder="Product description"
-              value={formData.description}
-              onChangeText={(text) => updateField("description", text)}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
+                <View style={styles.form}>
+                  {/* Product Name */}
+                  <FormField
+                    name="name"
+                    type="text"
+                    label="Product Name"
+                    placeholder="e.g. LED Bulb 9W"
+                    required
+                  />
 
-            <Text style={styles.label}>
-              Price <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0.00"
-              value={priceInput}
-              onChangeText={setPriceInput}
-              keyboardType="decimal-pad"
-            />
+                  {/* Description */}
+                  <FormField
+                    name="description"
+                    type="textarea"
+                    label="Description"
+                    placeholder="Product description"
+                  />
 
-            <Text style={styles.label}>SKU</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="SKU"
-              value={formData.sku || ""}
-              onChangeText={(text) => updateField("sku", text)}
-            />
+                  {/* Price */}
+                  <FormField
+                    name="price"
+                    type="number"
+                    label="Price"
+                    placeholder="0.00"
+                    required
+                  />
 
-            <Text style={styles.label}>Stock Quantity</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0"
-              value={stockInput}
-              onChangeText={setStockInput}
-              keyboardType="number-pad"
-            />
+                  {/* SKU */}
+                  <FormField
+                    name="sku"
+                    type="text"
+                    label="SKU"
+                    placeholder="SKU"
+                  />
 
-            <Text style={styles.label}>
-              Category <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.optionList}>
-              {categories.map((category) => (
-                <Button
-                  key={category.documentId}
-                  mode={
-                    formData.category === category.documentId
-                      ? "contained"
-                      : "outlined"
-                  }
-                  buttonColor={primaryColor}
-                  textColor={
-                    formData.category === category.documentId
-                      ? "#fff"
-                      : undefined
-                  }
-                  onPress={() => updateField("category", category.documentId)}
-                  style={styles.optionButton}
-                >
-                  {category.name}
-                </Button>
-              ))}
-            </View>
-            {selectedCategory?.attributes?.length ? (
-              <Text style={styles.hint}>
-                {selectedCategory.attributes.length} attribute
-                {selectedCategory.attributes.length === 1 ? "" : "s"} required
-                for this category.
-              </Text>
-            ) : null}
+                  {/* Stock Quantity */}
+                  <FormField
+                    name="stockQuantity"
+                    type="number"
+                    label="Stock Quantity"
+                    placeholder="0"
+                  />
 
-            <Text style={styles.label}>Brand</Text>
-            <View style={styles.optionList}>
-              {brands.map((brand) => (
-                <Button
-                  key={brand.documentId}
-                  mode={
-                    formData.brand === brand.documentId
-                      ? "contained"
-                      : "outlined"
-                  }
-                  buttonColor={primaryColor}
-                  textColor={
-                    formData.brand === brand.documentId ? "#fff" : undefined
-                  }
-                  onPress={() => updateField("brand", brand.documentId)}
-                  style={styles.optionButton}
-                >
-                  {brand.name}
-                </Button>
-              ))}
-            </View>
+                  {/* Category Selection */}
+                  <FormField
+                    name="category"
+                    type="select"
+                    label="Category"
+                    placeholder="Select a category"
+                    required
+                    selectMode="dropdown"
+                    searchable
+                    searchPlaceholder="Search categories..."
+                    options={categories.map((cat) => ({
+                      label: cat.name,
+                      value: cat.documentId,
+                    }))}
+                  />
+                  {selectedCategory?.attributes?.length ? (
+                    <Text style={styles.hint}>
+                      {selectedCategory.attributes.length} attribute
+                      {selectedCategory.attributes.length === 1 ? "" : "s"}{" "}
+                      required for this category.
+                    </Text>
+                  ) : null}
 
-            <Text style={styles.label}>Product Images</Text>
-            <View style={styles.imagePreviewContainer}>
-              {imageList.length ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {imageList.map((img, index) => (
-                    <View
-                      key={`${img.uri}-${index}`}
-                      style={styles.imageWrapper}
+                  {/* Brand Selection */}
+                  <FormField
+                    name="brand"
+                    type="select"
+                    label="Brand"
+                    placeholder="Select a brand"
+                    selectMode="dropdown"
+                    searchable
+                    searchPlaceholder="Search brands..."
+                    options={brands.map((b) => ({
+                      label: b.name,
+                      value: b.documentId,
+                    }))}
+                  />
+
+                  {/* Product Images */}
+                  <Text style={styles.label}>Product Images</Text>
+                  <View style={styles.imagePreviewContainer}>
+                    {imageList.length ? (
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {imageList.map((img, index) => (
+                          <View
+                            key={`${img.uri}-${index}`}
+                            style={styles.imageWrapper}
+                          >
+                            <Image
+                              source={{ uri: img.uri }}
+                              style={styles.imagePreview}
+                              contentFit="cover"
+                            />
+                            <TouchableOpacity
+                              style={styles.removeImageButton}
+                              onPress={() => handleRemoveImage(index)}
+                            >
+                              <Text style={styles.removeImageText}>×</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </ScrollView>
+                    ) : (
+                      <Text style={styles.noImageText}>No images selected</Text>
+                    )}
+                    <Button
+                      mode="outlined"
+                      onPress={handlePickImage}
+                      disabled={isUploadingImage}
+                      style={styles.pickButton}
                     >
-                      <Image
-                        source={{ uri: img.uri }}
-                        style={styles.imagePreview}
-                        contentFit="cover"
-                      />
-                      <TouchableOpacity
-                        style={styles.removeImageButton}
-                        onPress={() => handleRemoveImage(index)}
-                      >
-                        <Text style={styles.removeImageText}>×</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </ScrollView>
-              ) : (
-                <Text style={styles.noImageText}>No images selected</Text>
-              )}
-              <Button
-                mode="outlined"
-                onPress={handlePickImage}
-                disabled={isUploadingImage}
-                style={styles.pickButton}
-              >
-                {isUploadingImage ? "Uploading..." : "Pick & Upload Image"}
-              </Button>
-            </View>
+                      {isUploadingImage ? "Uploading..." : "Pick & Upload Image"}
+                    </Button>
+                  </View>
 
-            <Text style={styles.label}>Slug (auto)</Text>
-            <View style={styles.slugBox}>
-              <Text style={styles.slugText}>{slugValue || "-"}</Text>
-            </View>
+                  {/* Slug Preview */}
+                  <Text style={styles.label}>Slug (auto)</Text>
+                  <View style={styles.slugBox}>
+                    <Text style={styles.slugText}>
+                      {getSlugPreview(values.name) || "-"}
+                    </Text>
+                  </View>
 
-            {categoryAttributes.length > 0 && (
-              <>
-                <Text style={styles.sectionTitle}>Category Attributes</Text>
-                {categoryAttributes.map((attribute) => {
-                  const currentValue =
-                    attributeValues[attribute.id]?.value || "";
-                  const label = `${attribute.name}${attribute.unit ? ` (${attribute.unit})` : ""}`;
-                  return (
-                    <View key={attribute.id} style={styles.attributeBlock}>
-                      <Text style={styles.label}>
-                        {label}{" "}
-                        {attribute.isRequired ? (
-                          <Text style={styles.required}>*</Text>
-                        ) : null}
-                      </Text>
-                      {attribute.fieldType === "boolean" ? (
-                        <View style={styles.switchRow}>
-                          <Text>{currentValue === "true" ? "Yes" : "No"}</Text>
-                          <Switch
-                            value={currentValue === "true"}
-                            onValueChange={(value) =>
-                              handleAttributeChange(
-                                attribute,
-                                value ? "true" : "false",
-                              )
-                            }
-                          />
-                        </View>
-                      ) : attribute.fieldType === "select" &&
-                        attribute.options?.length ? (
-                        <SelectDropdown
-                          options={attribute.options}
-                          value={currentValue}
-                          onChange={(value) =>
-                            handleAttributeChange(attribute, value)
-                          }
-                          placeholder={`Select ${attribute.name}`}
-                        />
-                      ) : (
-                        <TextInput
-                          style={[
-                            styles.input,
-                            attribute.fieldType === "text"
-                              ? styles.multiline
-                              : null,
-                          ]}
-                          placeholder="Enter value"
-                          value={currentValue}
-                          onChangeText={(text) =>
-                            handleAttributeChange(attribute, text)
-                          }
-                          multiline={attribute.fieldType === "text"}
-                          numberOfLines={attribute.fieldType === "text" ? 3 : 1}
-                          keyboardType={
-                            attribute.fieldType === "number"
-                              ? "decimal-pad"
-                              : "default"
-                          }
-                        />
-                      )}
-                      {attribute.description ? (
-                        <Text style={styles.note}>{attribute.description}</Text>
-                      ) : null}
-                    </View>
-                  );
-                })}
-              </>
-            )}
-          </View>
+                  {/* Category Attributes */}
+                  {categoryAttributes.length > 0 && (
+                    <>
+                      <Text style={styles.sectionTitle}>Category Attributes</Text>
+                      {categoryAttributes.map((attribute) => {
+                        const currentValue =
+                          attributeValues[attribute.id]?.value || "";
+                        const label = `${attribute.name}${attribute.unit ? ` (${attribute.unit})` : ""}`;
+                        return (
+                          <View key={attribute.id} style={styles.attributeBlock}>
+                            <Text style={styles.label}>
+                              {label}{" "}
+                              {attribute.isRequired ? (
+                                <Text style={styles.required}>*</Text>
+                              ) : null}
+                            </Text>
+                            {attribute.fieldType === "boolean" ? (
+                              <View style={styles.switchRow}>
+                                <Text>
+                                  {currentValue === "true" ? "Yes" : "No"}
+                                </Text>
+                                <Switch
+                                  value={currentValue === "true"}
+                                  onValueChange={(value) =>
+                                    handleAttributeChange(
+                                      attribute,
+                                      value ? "true" : "false",
+                                      values.category
+                                    )
+                                  }
+                                />
+                              </View>
+                            ) : attribute.fieldType === "select" &&
+                              attribute.options?.length ? (
+                              <SelectDropdown
+                                options={attribute.options}
+                                value={currentValue}
+                                onChange={(value) =>
+                                  handleAttributeChange(
+                                    attribute,
+                                    value,
+                                    values.category
+                                  )
+                                }
+                                placeholder={`Select ${attribute.name}`}
+                              />
+                            ) : (
+                              <TextInput
+                                style={[
+                                  styles.input,
+                                  attribute.fieldType === "text"
+                                    ? styles.multiline
+                                    : null,
+                                ]}
+                                placeholder="Enter value"
+                                value={currentValue}
+                                onChangeText={(text) =>
+                                  handleAttributeChange(
+                                    attribute,
+                                    text,
+                                    values.category
+                                  )
+                                }
+                                multiline={attribute.fieldType === "text"}
+                                numberOfLines={
+                                  attribute.fieldType === "text" ? 3 : 1
+                                }
+                                keyboardType={
+                                  attribute.fieldType === "number"
+                                    ? "decimal-pad"
+                                    : "default"
+                                }
+                              />
+                            )}
+                            {attribute.description ? (
+                              <Text style={styles.note}>
+                                {attribute.description}
+                              </Text>
+                            ) : null}
+                          </View>
+                        );
+                      })}
+                    </>
+                  )}
+                </View>
 
-          <Button
-            mode="contained"
-            buttonColor={primaryColor}
-            onPress={handleSubmit}
-            loading={mutation.isPending || isUploadingImage}
-            disabled={mutation.isPending || isUploadingImage}
-            style={styles.submitButton}
-          >
-            {isEdit ? "Update Product" : "Create Product"}
-          </Button>
+                <Button
+                  mode="contained"
+                  buttonColor={primaryColor}
+                  onPress={() => handleSubmit()}
+                  loading={mutation.isPending || isUploadingImage}
+                  disabled={mutation.isPending || isUploadingImage}
+                  style={styles.submitButton}
+                >
+                  {isEdit ? "Update Product" : "Create Product"}
+                </Button>
 
-          {isEdit && (
-            <Button
-              mode="outlined"
-              textColor="red"
-              onPress={handleDelete}
-              style={styles.deleteButton}
-              disabled={deleteMutation.isPending || mutation.isPending}
-            >
-              Delete Product
-            </Button>
-          )}
+                {isEdit && (
+                  <Button
+                    mode="outlined"
+                    textColor="red"
+                    onPress={handleDelete}
+                    style={styles.deleteButton}
+                    disabled={deleteMutation.isPending || mutation.isPending}
+                  >
+                    Delete Product
+                  </Button>
+                )}
 
-          <Button
-            mode="outlined"
-            onPress={() => router.back()}
-            style={styles.cancelButton}
-            disabled={mutation.isPending}
-          >
-            Cancel
-          </Button>
-        </ScrollView>
+                <Button
+                  mode="outlined"
+                  onPress={() => router.back()}
+                  style={styles.cancelButton}
+                  disabled={mutation.isPending}
+                >
+                  Cancel
+                </Button>
+              </ScrollView>
+            );
+          }}
+        </Formik>
       </SafeAreaView>
     </ThemedView>
   );
