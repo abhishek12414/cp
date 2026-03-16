@@ -1,5 +1,6 @@
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
+import uploadApi from "./upload.api";
 import { getQueryString } from "@/helpers/queryParams";
 import { BrandInterface, BrandInput, ApiResponseInterface } from "@/interface";
 
@@ -79,13 +80,7 @@ export const brandApi = {
 
   // Helper for logo upload (Strapi media): POST /api/upload , returns file ID to attach
   // Note: Full FormData for create/update with logo in later step
-  uploadLogo: (file: FormData) => {
-    return apiClient.post("/api/upload", file, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  },
+  uploadLogo: uploadApi.uploadFile,
 };
 
 export default brandApi;

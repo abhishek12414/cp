@@ -1,5 +1,6 @@
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
+import uploadApi from "./upload.api";
 import { getQueryString } from "@/helpers/queryParams";
 import { CategoryInterface, ApiResponseInterface } from "@/interface";
 
@@ -44,7 +45,8 @@ export const categoryApi = {
 
   // GET /api/categories/{documentId}
   getCategory: (documentId: string) => {
-    const url = `${apiRoutes.CATEGORY(documentId)}`;
+    const query = getQueryString({ populate: ["image"] });
+    const url = `${apiRoutes.CATEGORY(documentId)}${query}`;
     return apiClient.get<ApiResponseInterface<CategoryInterface>>(url);
   },
 
@@ -71,13 +73,7 @@ export const categoryApi = {
   },
 
   // Helper for image upload (Strapi media): POST /api/upload
-  uploadImage: (file: FormData) => {
-    return apiClient.post("/api/upload", file, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  },
+  uploadImage: uploadApi.uploadFile,
 };
 
 export default categoryApi;
