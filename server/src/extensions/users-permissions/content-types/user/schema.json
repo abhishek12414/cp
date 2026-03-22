@@ -76,6 +76,22 @@
       "relation": "oneToMany",
       "target": "api::order.order",
       "mappedBy": "user"
+    },
+    "wishlists": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::wishlist.wishlist",
+      "mappedBy": "user"
+    },
+    "name": {
+      "type": "string",
+      "required": false,
+      "configurable": false
+    },
+    "phone": {
+      "type": "string",
+      "required": false,
+      "configurable": false
     }
   }
 }

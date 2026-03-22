@@ -11,6 +11,8 @@ export interface RegisterPayload {
   username: string;
   email: string;
   password: string;
+  phone?: string;
+  name?: string;
 }
 
 export interface ForgotPasswordPayload {
@@ -21,6 +23,32 @@ export interface ResetPasswordPayload {
   code: string;
   password: string;
   passwordConfirmation: string;
+}
+
+export interface AuthUser {
+  id: number;
+  username: string;
+  email: string;
+  provider: string;
+  confirmed: boolean;
+  blocked: boolean;
+  phone?: string;
+  name?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthMeResponse {
+  id: number;
+  username: string;
+  email: string;
+  provider: string;
+  confirmed: boolean;
+  blocked: boolean;
+  phone?: string;
+  name?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const authApi = {
@@ -48,7 +76,7 @@ export const authApi = {
   },
 
   getMe: () => {
-    return apiClient.get<AuthResponseInterface["user"]>(apiRoutes.ME);
+    return apiClient.get<AuthMeResponse>(apiRoutes.ME);
   },
 
   updateUser: (id: string, data: Partial<AuthResponseInterface["user"]>) => {
