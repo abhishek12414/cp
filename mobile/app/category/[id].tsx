@@ -1,16 +1,19 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import { ActivityIndicator, IconButton, Text } from "react-native-paper";
+import { ActivityIndicator, IconButton, Text, Chip, Button } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedView } from "@/components/ThemedView";
 import ProductCard from "@/components/ui/ProductCard";
+import FilterModal from "@/components/ui/FilterModal";
+import { buildFilterQuery } from "@/components/ui/ProductFilter";
 
 import { Colors } from "@/constants/Colors";
-import { useCategoryByDocumentId, useProducts } from "@/hooks/queries";
+import { useCategoryWithAttributes, useProducts, useBrand } from "@/hooks/queries";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { ProductFilterState, AttributeInterface } from "@/interface";
 
 export default function CategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,17 +25,42 @@ export default function CategoryScreen() {
   const primaryColor = Colors[colorScheme].primary;
 
   const { data: category, isLoading: isLoadingCategory } =
-    useCategoryByDocumentId(id || "");
+    useCategoryWithAttributes(id || "");
 
-  // For Strapi we need nested filter keys so qs.stringify outputs
-  // filters[category][documentId][$eq]=<id>
-  const query = {
-    filters: {
-      category: { documentId: { $eq: id } },
-    },
-  };
+  const { data: brands = [] } = useBrand();
+
+  // Filter state
+  const [filters, setFilters] = useState<ProductFilterState | null>(null);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+
+  // Build query based on filters
+  const query = useMemo(() => {
+    if (filters) {
+      return buildFilterQuery(id || "", filters);
+    }
+    return {
+      filters: {
+        category: { documentId: { $eq: id } },
+      },
+    };
+  }, [id, filters]);
+
   const { data: categoryProducts, isLoading: isLoadingProducts } =
     useProducts(query);
+
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    if (!filters) return 0;
+    let count = 0;
+    Object.values(filters.attributes).forEach((attr) => {
+      if (attr.value !== null && attr.value !== "" && attr.value !== undefined) {
+        count++;
+      }
+    });
+    if (filters.priceRange.min !== null || filters.priceRange.max !== null) count++;
+    if (filters.brands.selectedBrandIds.length > 0) count++;
+    return count;
+  }, [filters]);
 
   const handleGoBack = () => {
     router.back();
@@ -52,7 +80,36 @@ export default function CategoryScreen() {
     // Implement add to wishlist logic
   };
 
-  if (isLoadingCategory || isLoadingProducts) {
+  const handleOpenFilter = () => {
+    setIsFilterVisible(true);
+  };
+
+  const handleCloseFilter = () => {
+    setIsFilterVisible(false);
+  };
+
+  const handleApplyFilters = useCallback((newFilters: ProductFilterState) => {
+    setFilters(newFilters);
+  }, []);
+
+  const handleClearFilters = () => {
+    setFilters(null);
+  };
+
+  // Get category attributes for filter
+  const categoryAttributes: AttributeInterface[] = useMemo(() => {
+    return category?.attributes || [];
+  }, [category]);
+
+  // Get available brands for filter
+  const availableBrands = useMemo(() => {
+    return brands.map((brand) => ({
+      documentId: brand.documentId,
+      name: brand.name,
+    }));
+  }, [brands]);
+
+  if (isLoadingCategory) {
     return (
       <ThemedView style={styles.loadingContainer}>
         <ActivityIndicator animating={true} color={primaryColor} />
@@ -70,8 +127,99 @@ export default function CategoryScreen() {
           <Text variant="headlineSmall" style={styles.headerTitle}>
             {category?.name}
           </Text>
-          <View style={{ width: 40 }} />
+          <IconButton
+            icon="filter-variant"
+            size={24}
+            onPress={handleOpenFilter}
+            containerColor={activeFilterCount > 0 ? primaryColor : undefined}
+            iconColor={activeFilterCount > 0 ? "#fff" : undefined}
+          />
         </View>
+
+        {/* Active filters display */}
+        {activeFilterCount > 0 && (
+          <View style={styles.activeFiltersContainer}>
+            <FlatList
+              horizontal
+              data={[
+                ...(filters?.priceRange.min !== null || filters?.priceRange.max !== null
+                  ? [{ id: "price", label: `Price: ${filters?.priceRange.min || 0} - ${filters?.priceRange.max || "∞"}` }]
+                  : []),
+                ...(filters?.brands.selectedBrandIds.map((brandId) => ({
+                  id: `brand-${brandId}`,
+                  label: brands.find((b) => b.documentId === brandId)?.name || brandId,
+                })) || []),
+                ...Object.values(filters?.attributes || {})
+                  .filter((attr) => attr.value !== null && attr.value !== "")
+                  .map((attr) => ({
+                    id: `attr-${attr.attributeId}`,
+                    label: `${attr.attributeName}: ${attr.value}`,
+                  })),
+              ]}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <Chip
+                  mode="outlined"
+                  onClose={() => {
+                    // Handle removing individual filter
+                    if (item.id === "price") {
+                      setFilters((prev) =>
+                        prev
+                          ? { ...prev, priceRange: { min: null, max: null } }
+                          : null
+                      );
+                    } else if (item.id.startsWith("brand-")) {
+                      const brandId = item.id.replace("brand-", "");
+                      setFilters((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              brands: {
+                                selectedBrandIds: prev.brands.selectedBrandIds.filter(
+                                  (id) => id !== brandId
+                                ),
+                              },
+                            }
+                          : null
+                      );
+                    } else if (item.id.startsWith("attr-")) {
+                      const attrId = Number(item.id.replace("attr-", ""));
+                      setFilters((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              attributes: {
+                                ...prev.attributes,
+                                [attrId]: {
+                                  ...prev.attributes[attrId],
+                                  value: null,
+                                },
+                              },
+                            }
+                          : null
+                      );
+                    }
+                  }}
+                  style={styles.activeFilterChip}
+                  textStyle={styles.activeFilterChipText}
+                >
+                  {item.label}
+                </Chip>
+              )}
+              contentContainerStyle={styles.activeFiltersList}
+              showsHorizontalScrollIndicator={false}
+            />
+            <Button
+              mode="text"
+              compact
+              onPress={handleClearFilters}
+              textColor={primaryColor}
+              style={styles.clearButton}
+            >
+              Clear
+            </Button>
+          </View>
+        )}
 
         {isLoadingProducts ? (
           <View style={styles.loadingContainer}>
@@ -99,11 +247,32 @@ export default function CategoryScreen() {
                 <Text variant="bodyMedium">
                   Try changing your search or filters
                 </Text>
+                {activeFilterCount > 0 && (
+                  <Button
+                    mode="outlined"
+                    onPress={handleClearFilters}
+                    style={styles.resetFilterButton}
+                    textColor={primaryColor}
+                  >
+                    Reset Filters
+                  </Button>
+                )}
               </View>
             }
           />
         )}
       </SafeAreaView>
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={isFilterVisible}
+        onClose={handleCloseFilter}
+        categoryId={id || ""}
+        attributes={categoryAttributes}
+        availableBrands={availableBrands}
+        onApplyFilters={handleApplyFilters}
+        initialFilters={filters || undefined}
+      />
     </ThemedView>
   );
 }
@@ -130,34 +299,24 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontWeight: "700",
   },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+  activeFiltersContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingBottom: 8,
   },
-  searchBar: {
-    elevation: 2,
-    borderRadius: 12,
+  activeFiltersList: {
+    paddingRight: 8,
   },
-  filterContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  filterTitle: {
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  brandChip: {
+  activeFilterChip: {
     marginRight: 8,
+    backgroundColor: "#f0f0f0",
   },
-  chipsList: {
-    paddingRight: 16,
+  activeFilterChipText: {
+    fontSize: 12,
   },
-  sortContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  segmentedButtons: {
-    marginTop: 8,
+  clearButton: {
+    marginLeft: 4,
   },
   productsList: {
     padding: 8,
@@ -170,5 +329,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
+  },
+  resetFilterButton: {
+    marginTop: 16,
+    borderColor: "#007AFF",
   },
 });

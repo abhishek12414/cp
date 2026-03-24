@@ -10,9 +10,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedView } from "@/components/ThemedView";
 
 import { Colors } from "@/constants/Colors";
-import { useProductByDocumentId } from "@/hooks/queries";
+import { useProductByDocumentId, useIsInWishlist, useToggleWishlist } from "@/hooks/queries";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { getImageUrl } from "@/helpers/image";
+import { shareProduct } from "@/helpers/share";
 
 const { width } = Dimensions.get("window");
 
@@ -29,6 +30,10 @@ export default function ProductScreen() {
       ? "light"
       : "dark";
   const primaryColor = Colors[colorScheme].primary;
+
+  // Wishlist hooks
+  const isInWishlist = useIsInWishlist(id || "");
+  const toggleWishlist = useToggleWishlist();
 
   // Use fields returned from Strapi
   const brandName = product?.brand?.name;
@@ -57,9 +62,10 @@ export default function ProductScreen() {
     // Implement add to cart logic
   };
 
-  const handleAddToWishlist = () => {
-    console.log("Add to wishlist:", id);
-    // Implement add to wishlist logic
+  const handleToggleWishlist = () => {
+    if (id) {
+      toggleWishlist.mutate(id);
+    }
   };
 
   if (isLoading || !product) {
@@ -91,13 +97,19 @@ export default function ProductScreen() {
               <Text style={styles.headerBrandText}>{brandName}</Text>
             ) : null}
           </View>
-          <IconButton
-            icon={({ size, color }) => (
-              <Ionicons name="heart-outline" size={size} color={color} />
-            )}
-            size={24}
-            onPress={handleAddToWishlist}
-          />
+          <View style={styles.headerActions}>
+            <IconButton
+              icon="share-variant"
+              size={24}
+              onPress={() => shareProduct(id || "", product.name, product.price)}
+            />
+            <IconButton
+              icon={isInWishlist ? "heart" : "heart-outline"}
+              iconColor={isInWishlist ? "#FF6B6B" : undefined}
+              size={24}
+              onPress={handleToggleWishlist}
+            />
+          </View>
         </View>
 
         <ScrollView
@@ -316,6 +328,10 @@ const styles = StyleSheet.create({
   headerBrandText: {
     fontSize: 11,
     color: "#666",
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   quickRow: {
     flexDirection: "row",

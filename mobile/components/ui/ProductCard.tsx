@@ -5,6 +5,8 @@ import { Image } from "expo-image";
 
 import { ProductInterface } from "@/interface";
 import { getImageUrl } from "@/helpers/image";
+import { shareProduct } from "@/helpers/share";
+import { useIsInWishlist, useToggleWishlist } from "@/hooks/queries";
 
 const { width } = Dimensions.get("window");
 
@@ -23,6 +25,7 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const {
     documentId,
+    id,
     name,
     price,
     comparePrice,
@@ -43,6 +46,10 @@ const ProductCard = ({
     discountPrice !== undefined && discountPrice < price && discountPrice > 0;
   const stockValue = data.stockQuantity ?? stock ?? 0;
   const isLowStock = stockValue <= (lowStockThreshold || 0);
+
+  // Wishlist hooks
+  const isInWishlist = useIsInWishlist(documentId);
+  const toggleWishlist = useToggleWishlist();
 
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
@@ -118,14 +125,24 @@ const ProductCard = ({
           <Text style={styles.lowStockText}>Low Stock</Text>
         </View>
       )}
-      {onAddToWishlist && (
-        <TouchableOpacity
-          style={styles.wishlistBtn}
-          onPress={() => onAddToWishlist(documentId)}
-        >
-          <IconButton icon="heart-outline" iconColor="#fff" size={20} />
-        </TouchableOpacity>
-      )}
+      {/* Wishlist Button */}
+      <TouchableOpacity
+        style={styles.wishlistBtn}
+        onPress={() => toggleWishlist.mutate(documentId)}
+      >
+        <IconButton 
+          icon={isInWishlist ? "heart" : "heart-outline"} 
+          iconColor={isInWishlist ? "#FF6B6B" : "#fff"} 
+          size={20} 
+        />
+      </TouchableOpacity>
+      {/* Share Button */}
+      <TouchableOpacity
+        style={styles.shareBtn}
+        onPress={() => shareProduct(documentId, name, price)}
+      >
+        <IconButton icon="share-variant" iconColor="#fff" size={20} />
+      </TouchableOpacity>
 
       <View style={styles.content}>
         {brand && <Text style={styles.brand}>{brand.name}</Text>}
@@ -265,6 +282,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 4,
     right: 4,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  shareBtn: {
+    position: "absolute",
+    top: 4,
+    right: 48,
     backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 20,
     zIndex: 10,

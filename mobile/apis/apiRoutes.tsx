@@ -37,9 +37,10 @@ export const apiRoutes = {
   REMOVE_FROM_CART: `${apiV1}/carts/remove`,
 
   // Wishlist
-  WISHLIST: `${apiV1}/wishlists/me`,
-  ADD_TO_WISHLIST: `${apiV1}/wishlists/add`,
-  REMOVE_FROM_WISHLIST: `${apiV1}/wishlists/remove`,
+  WISHLISTS: `${apiV1}/wishlists`,
+  WISHLIST: (id: string) => `${apiV1}/wishlists/${id}`,
+  WISHLIST_TOGGLE: `${apiV1}/wishlists/toggle`,
+  WISHLIST_CHECK: `${apiV1}/wishlists/check`,
 
   // Orders
   ORDERS: `${apiV1}/orders`,

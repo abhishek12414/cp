@@ -66,6 +66,12 @@
       "target": "api::product-attribute-value.product-attribute-value",
       "mappedBy": "product"
     },
+    "wishlists": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::wishlist.wishlist",
+      "mappedBy": "product"
+    },
     "cartItems": {
       "type": "relation",
       "relation": "oneToMany",

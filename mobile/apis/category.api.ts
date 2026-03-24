@@ -50,6 +50,13 @@ export const categoryApi = {
     return apiClient.get<ApiResponseInterface<CategoryInterface>>(url);
   },
 
+  // GET /api/categories/{documentId} with attributes populated
+  getCategoryWithAttributes: (documentId: string) => {
+    const query = getQueryString({ populate: ["image", "attributes"] });
+    const url = `${apiRoutes.CATEGORY(documentId)}${query}`;
+    return apiClient.get<ApiResponseInterface<CategoryInterface>>(url);
+  },
+
   // POST /api/categories with { data: cleaned }
   createCategory: (data: CategoryInput) => {
     const cleaned = cleanCategoryData(data);

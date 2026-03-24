@@ -52,3 +52,16 @@ export const useCategoryByDocumentId = (
     enabled: !!documentId,
   });
 };
+
+export const useCategoryWithAttributes = (
+  documentId: CategoryInterface["documentId"]
+) => {
+  return useQuery<CategoryInterface>({
+    queryKey: ["category", documentId, "withAttributes"],
+    queryFn: async () => {
+      const response = await categoryApi.getCategoryWithAttributes(documentId);
+      return response.data.data;
+    },
+    enabled: !!documentId,
+  });
+};
