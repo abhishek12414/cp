@@ -65,3 +65,25 @@ export const useCategoryWithAttributes = (
     enabled: !!documentId,
   });
 };
+
+// Hook to search categories by name
+export const useSearchCategories = (query: string, enabled: boolean = true) => {
+  return useQuery<CategoryInterface[]>({
+    queryKey: ["searchCategories", query],
+    queryFn: async () => {
+      const config = getQueryString({
+        populate: ["image"],
+        filters: {
+          name: { $containsi: query },
+        },
+        pagination: { pageSize: 10 },
+      });
+      const url = `${apiRoutes.CATEGORIES}${config}`;
+
+      const response = await apiClient.get<ApiResponseInterface<CategoryInterface[]>>(url);
+      return response.data.data;
+    },
+    enabled: enabled && query.length >= 2,
+    staleTime: 0,
+  });
+};

@@ -44,3 +44,28 @@ export const useProductByDocumentId = (documentId: string) => {
     staleTime: 0,
   });
 };
+
+// Hook to search products by name or description
+export const useSearchProducts = (query: string, enabled: boolean = true) => {
+  return useQuery<ProductInterface[]>({
+    queryKey: ["searchProducts", query],
+    queryFn: async () => {
+      const config = getQueryString({
+        populate: ["images", "category", "brand"],
+        filters: {
+          $or: [
+            { name: { $containsi: query } },
+            { description: { $containsi: query } },
+          ],
+        },
+        pagination: { pageSize: 10 },
+      });
+      const url = `${apiRoutes.PRODUCTS}${config}`;
+
+      const response = await apiClient.get<ApiResponseInterface<ProductInterface[]>>(url);
+      return response.data.data;
+    },
+    enabled: enabled && query.length >= 2,
+    staleTime: 0,
+  });
+};

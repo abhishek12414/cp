@@ -1,0 +1,50 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_activities",
+  "info": {
+    "singularName": "user-activity",
+    "pluralName": "user-activities",
+    "displayName": "User Activity",
+    "description": "Tracks user search history and product interactions for personalization"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "activities"
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["search", "product_view", "product_purchase", "category_view", "brand_view"],
+      "required": true
+    },
+    "searchQuery": {
+      "type": "string",
+      "description": "The search term (for search type)"
+    },
+    "product": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product.product"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category"
+    },
+    "brand": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::brand.brand"
+    },
+    "metadata": {
+      "type": "json",
+      "description": "Additional context like price range, attributes viewed"
+    }
+  }
+}

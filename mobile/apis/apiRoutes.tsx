@@ -48,6 +48,22 @@ export const apiRoutes = {
   CREATE_ORDER: `${apiV1}/orders`,
   UPLOAD_PURCHASE_ORDER: `${apiV1}/orders/upload`,
 
+  // Addresses
+  ADDRESSES: `${apiV1}/addresses`,
+  ADDRESS: (id: string) => `${apiV1}/addresses/${id}`,
+  ADDRESS_SET_PRIMARY: (id: string) => `${apiV1}/addresses/${id}/set-primary`,
+
+  // Upload Orders
+  UPLOAD_ORDERS: `${apiV1}/upload-orders`,
+  UPLOAD_ORDER: (id: string) => `${apiV1}/upload-orders/${id}`,
+  UPLOAD_ORDERS_ADMIN: `${apiV1}/upload-orders-admin/all`,
+  UPLOAD_ORDER_ADMIN: (id: string) => `${apiV1}/upload-orders-admin/${id}`,
+
+  // User Activity & Personalization
+  TRACK_ACTIVITY: `${apiV1}/user-activities/track`,
+  RECENT_SEARCHES: `${apiV1}/user-activities/recent-searches`,
+  RECOMMENDATIONS: `${apiV1}/user-activities/recommendations`,
+
   // Support
   SUPPORT_TICKETS: `${apiV1}/support-tickets`,
   SUPPORT_TICKET: (id: string) => `${apiV1}/support-tickets/${id}`,

@@ -1,8 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View, TouchableOpacity } from "react-native";
 import { ActivityIndicator, Avatar, Searchbar, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -10,78 +8,47 @@ import { ThemedView } from "@/components/ThemedView";
 import { BannerCarousel } from "@/components/ui/BannerCarousel";
 import BrandCard from "@/components/ui/BrandCard";
 import { CategoryCard } from "@/components/ui/CategoryCard";
-import { DealCard } from "@/components/ui/DealCard";
 import { HorizontalScroller } from "@/components/ui/HorizontalScroller";
 import { OrderUploadButton } from "@/components/ui/OrderUploadButton";
+import { Recommendations } from "@/components/ui/Recommendations";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ServiceCard } from "@/components/ui/ServiceCard";
-import { SmallProductStripItem } from "@/components/ui/SmallProductStripItem";
+import { useBottomTabOverflow } from "@/components/ui/TabBarBackground";
 import { TrendingCategoryItem } from "@/components/ui/TrendingCategoryItem";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 // Import mock data for initial development
-import { useCategories, useProducts } from "@/hooks/queries";
+import { useCategories } from "@/hooks/queries";
 import { useBrand } from "@/hooks/queries/useBrand";
 import { BrandInterface, CategoryInterface } from "@/interface";
-import {
-  deals,
-  products,
-  recentlyViewed,
-  recommendedProducts,
-  services,
-  trendingCategories,
-} from "@/mock/products";
+import { services, trendingCategories } from "@/mock/products";
 
 export default function HomeScreen() {
-  const [searchQuery, setSearchQuery] = useState("");
   const colorScheme =
     useThemeColor({}, "background") === Colors.light.background
       ? "light"
       : "dark";
   const primaryColor = Colors[colorScheme].primary;
+  const bottomTabOverflow = useBottomTabOverflow();
 
   // React Query hooks would replace these when connecting to real API
   const { data: categoriesData, isLoading: isLoadingCategories } =
     useCategories();
 
   const { data: brandsData, isLoading: isLoadingBrands } = useBrand();
-  const { data: productsData, isLoading: isLoadingProducts } = useProducts({});
 
-  const { data: featuredProducts } = useQuery({
-    queryKey: ["featuredProducts"],
-    queryFn: () => Promise.resolve(products),
-    initialData: products,
-  });
-
-  const onSearchChange = (query: string) => {
-    setSearchQuery(query);
+  const handleSearchPress = () => {
+    router.push("/search");
   };
 
   const handleCategoryPress = (category: CategoryInterface) => {
     router.push(`/category/${category.documentId}`);
   };
 
-  const handleBrandPress = (id: BrandInterface["id"]) => {
+  const handleBrandPress = (documentId: BrandInterface["documentId"]) => {
     // Navigate to brand details screen
-    // Brand page not implemented yet, so stay on current page
-    console.log("Brand pressed:", id);
-    // Will implement later: router.push(`/brand/${id}`);
-  };
-
-  const handleProductPress = (id: string) => {
-    // Navigate to product details screen
-    router.push(`/product/${id}`);
-  };
-
-  const handleAddToCart = (id: string) => {
-    // Add product to cart logic
-    console.log("Add to cart:", id);
-  };
-
-  const handleAddToWishlist = (id: string) => {
-    // Add product to wishlist logic
-    console.log("Add to wishlist:", id);
+    router.push(`/brand/${documentId}`);
   };
 
   const handleUploadOrder = () => {
@@ -92,7 +59,7 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         {/* Top App Bar */}
         <View style={styles.topBar}>
           <View style={styles.brandRow}>
@@ -105,19 +72,26 @@ export default function HomeScreen() {
             <Avatar.Icon size={32} icon="cart-outline" style={styles.iconBtn} />
           </View>
         </View>
-        <Searchbar
-          placeholder="Search for electrical products..."
-          onChangeText={onSearchChange}
-          value={searchQuery}
-          style={styles.searchBar}
-        />
+        <TouchableOpacity onPress={handleSearchPress} activeOpacity={0.8}>
+          <View pointerEvents="none">
+            <Searchbar
+              placeholder="Search for electrical products..."
+              value=""
+              style={styles.searchBar}
+            />
+          </View>
+        </TouchableOpacity>
         <Text variant="labelSmall" style={styles.location}>
           Deliver to: New York 10001 • Change
         </Text>
 
         <ScrollView
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: bottomTabOverflow + 24 },
+          ]}
         >
           {/* Banner Carousel */}
           <BannerCarousel
@@ -173,21 +147,6 @@ export default function HomeScreen() {
             </HorizontalScroller>
           )}
 
-          {/* Today's Deals */}
-          <SectionHeader title="Today's Deals" />
-          <HorizontalScroller>
-            {deals.map((d) => (
-              <DealCard
-                key={d.id}
-                id={d.id}
-                title={d.title}
-                subtitle={d.subtitle}
-                badge={d.badge}
-                image={d.image}
-              />
-            ))}
-          </HorizontalScroller>
-
           {/* Trending Categories */}
           <SectionHeader title="Trending Categories" onPressAction={() => {}} />
           <View style={styles.trendingList}>
@@ -203,56 +162,8 @@ export default function HomeScreen() {
             ))}
           </View>
 
-          {/* Featured Products (grid) */}
-          <SectionHeader title="Featured Products" onPressAction={() => {}} />
-          {isLoadingProducts ? (
-            <ActivityIndicator animating color={primaryColor} />
-          ) : (
-            <View style={styles.productsGrid}>
-              {/* {featuredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  title={product.name}
-                  price={product.price}
-                  discountPrice={product.discountPrice}
-                  image={product.image}
-                  brand={brands.find((b) => b.id === product.brandId)?.name}
-                  onPress={handleProductPress}
-                  onAddToCart={handleAddToCart}
-                  onAddToWishlist={handleAddToWishlist}
-                />
-              ))} */}
-            </View>
-          )}
-
-          {/* Recently Viewed */}
-          <SectionHeader title="Recently Viewed" />
-          <HorizontalScroller>
-            {recentlyViewed.map((p) => (
-              <SmallProductStripItem
-                key={p.id}
-                id={p.id}
-                title={p.title}
-                price={p.price}
-                image={p.image}
-              />
-            ))}
-          </HorizontalScroller>
-
-          {/* Recommended */}
-          <SectionHeader title="Recommended for You" />
-          <HorizontalScroller>
-            {recommendedProducts.map((p) => (
-              <SmallProductStripItem
-                key={p.id}
-                id={p.id}
-                title={p.title}
-                price={p.price}
-                image={p.image}
-              />
-            ))}
-          </HorizontalScroller>
+          {/* Personalized Recommendations */}
+          <Recommendations />
 
           {/* Services */}
           <SectionHeader title="Our Services" />
@@ -282,6 +193,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
   searchBar: {
     marginHorizontal: 16,
     marginTop: 8,
@@ -289,7 +203,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   location: { marginHorizontal: 16, marginTop: 6, color: "#007AFF" },
-  scrollContent: { paddingBottom: 48, paddingTop: 12, gap: 4 },
+  scrollContent: {
+    flexGrow: 1,
+    paddingTop: 12,
+    gap: 4,
+  },
   productsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
