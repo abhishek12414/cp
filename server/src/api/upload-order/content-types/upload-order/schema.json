@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "upload_orders",
+  "info": {
+    "singularName": "upload-order",
+    "pluralName": "upload-orders",
+    "displayName": "Upload Order",
+    "description": "User uploaded files (from electrician) for manual billing generation"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "uploadOrders"
+    },
+    "files": {
+      "type": "media",
+      "multiple": true,
+      "required": true,
+      "allowedTypes": ["images", "files"]
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "processing", "completed", "cancelled"],
+      "default": "pending",
+      "required": true
+    },
+    "notes": {
+      "type": "text",
+      "description": "User notes about the upload"
+    },
+    "adminNotes": {
+      "type": "text",
+      "description": "Admin notes during processing"
+    },
+    "generatedOrder": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::order.order"
+    },
+    "totalAmount": {
+      "type": "decimal",
+      "min": 0,
+      "description": "Final calculated amount after manual review"
+    }
+  }
+}

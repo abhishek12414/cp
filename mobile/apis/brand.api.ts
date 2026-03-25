@@ -51,6 +51,13 @@ export const brandApi = {
     return apiClient.get<ApiResponseInterface<BrandInterface>>(url);
   },
 
+  // GET /api/brands/{documentId} with full populate for brand page
+  getBrandByDocumentId: (documentId: string) => {
+    const query = getQueryString({ populate: ["logo"] });
+    const url = `${apiRoutes.BRAND(documentId)}${query}`;
+    return apiClient.get<ApiResponseInterface<BrandInterface>>(url);
+  },
+
   // POST /api/brands with { data: cleaned } - fixes 400 by proper format/optional fields
   createBrand: (data: BrandInput) => {
     const cleaned = cleanBrandData(data);

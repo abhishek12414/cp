@@ -8,7 +8,7 @@ import { BrandInterface } from "@/interface";
 
 export type BrandCardProps = {
   data: BrandInterface;
-  onPress: (id: BrandInterface["id"]) => void;
+  onPress: (documentId: BrandInterface["documentId"]) => void;
 };
 
 const BrandCard = ({ data, onPress }: BrandCardProps) => {
@@ -16,7 +16,7 @@ const BrandCard = ({ data, onPress }: BrandCardProps) => {
 
   return (
     <TouchableOpacity
-      onPress={() => onPress(data.id)}
+      onPress={() => onPress(data.documentId)}
       activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={`Open brand ${data.name}`}

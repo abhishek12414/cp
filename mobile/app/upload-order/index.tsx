@@ -109,6 +109,18 @@ export default function UploadOrderScreen() {
 
     // Call the same request flow used for the button so SDK differences are handled.
     requestPermission();
+
+    // Timeout fallback - if permission check hangs, show the permission UI after 3 seconds
+    const timeoutId = setTimeout(() => {
+      setHasPermission((current) => {
+        if (current === null) {
+          return false;
+        }
+        return current;
+      });
+    }, 3000);
+
+    return () => clearTimeout(timeoutId);
   }, [hasCameraApi]);
 
   const handleGoBack = () => {

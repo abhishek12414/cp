@@ -83,6 +83,24 @@
       "target": "api::wishlist.wishlist",
       "mappedBy": "user"
     },
+    "addresses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::address.address",
+      "mappedBy": "user"
+    },
+    "uploadOrders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::upload-order.upload-order",
+      "mappedBy": "user"
+    },
+    "activities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-activity.user-activity",
+      "mappedBy": "user"
+    },
     "name": {
       "type": "string",
       "required": false,

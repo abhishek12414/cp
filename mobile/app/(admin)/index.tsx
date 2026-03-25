@@ -96,6 +96,13 @@ export default function AdminPanelScreen() {
       icon: "receipt-outline",
       onPress: () => router.push("/(admin)/orders"),
     },
+    {
+      id: "upload-orders",
+      label: "Upload Orders",
+      description: "Review electrician uploads",
+      icon: "cloud-upload-outline",
+      onPress: () => router.push("/(admin)/upload-orders"),
+    },
   ];
 
   return (

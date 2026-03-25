@@ -430,6 +430,86 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiAddressAddress extends Struct.CollectionTypeSchema {
+  collectionName: 'addresses';
+  info: {
+    description: 'User shipping/billing addresses for checkout';
+    displayName: 'Address';
+    pluralName: 'addresses';
+    singularName: 'address';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    addressLine1: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    addressLine2: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    city: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    country: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }> &
+      Schema.Attribute.DefaultTo<'India'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    fullName: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    isPrimary: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    label: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
+      }> &
+      Schema.Attribute.DefaultTo<'Home'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::address.address'
+    > &
+      Schema.Attribute.Private;
+    phone: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 20;
+      }>;
+    pincode: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 10;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    state: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    type: Schema.Attribute.Enumeration<['shipping', 'billing', 'both']> &
+      Schema.Attribute.DefaultTo<'shipping'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiAttributeAttribute extends Struct.CollectionTypeSchema {
   collectionName: 'attributes';
   info: {
@@ -847,6 +927,103 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     wishlists: Schema.Attribute.Relation<'oneToMany', 'api::wishlist.wishlist'>;
+  };
+}
+
+export interface ApiUploadOrderUploadOrder extends Struct.CollectionTypeSchema {
+  collectionName: 'upload_orders';
+  info: {
+    description: 'User uploaded files (from electrician) for manual billing generation';
+    displayName: 'Upload Order';
+    pluralName: 'upload-orders';
+    singularName: 'upload-order';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    adminNotes: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    files: Schema.Attribute.Media<'images' | 'files', true> &
+      Schema.Attribute.Required;
+    generatedOrder: Schema.Attribute.Relation<'oneToOne', 'api::order.order'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::upload-order.upload-order'
+    > &
+      Schema.Attribute.Private;
+    notes: Schema.Attribute.Text;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'processing', 'completed', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    totalAmount: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
+export interface ApiUserActivityUserActivity
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'user_activities';
+  info: {
+    description: 'Tracks user search history and product interactions for personalization';
+    displayName: 'User Activity';
+    pluralName: 'user-activities';
+    singularName: 'user-activity';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    brand: Schema.Attribute.Relation<'manyToOne', 'api::brand.brand'>;
+    category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-activity.user-activity'
+    > &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    product: Schema.Attribute.Relation<'manyToOne', 'api::product.product'>;
+    publishedAt: Schema.Attribute.DateTime;
+    searchQuery: Schema.Attribute.String;
+    type: Schema.Attribute.Enumeration<
+      [
+        'search',
+        'product_view',
+        'product_purchase',
+        'category_view',
+        'brand_view',
+      ]
+    > &
+      Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 }
 
@@ -1342,6 +1519,11 @@ export interface PluginUsersPermissionsUser
     timestamps: true;
   };
   attributes: {
+    activities: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-activity.user-activity'
+    >;
+    addresses: Schema.Attribute.Relation<'oneToMany', 'api::address.address'>;
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     cart: Schema.Attribute.Relation<'oneToOne', 'api::cart.cart'>;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
@@ -1379,6 +1561,10 @@ export interface PluginUsersPermissionsUser
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    uploadOrders: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::upload-order.upload-order'
+    >;
     username: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Private &
@@ -1401,6 +1587,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::address.address': ApiAddressAddress;
       'api::attribute.attribute': ApiAttributeAttribute;
       'api::brand.brand': ApiBrandBrand;
       'api::cart-item.cart-item': ApiCartItemCartItem;
@@ -1410,6 +1597,8 @@ declare module '@strapi/strapi' {
       'api::order.order': ApiOrderOrder;
       'api::product-attribute-value.product-attribute-value': ApiProductAttributeValueProductAttributeValue;
       'api::product.product': ApiProductProduct;
+      'api::upload-order.upload-order': ApiUploadOrderUploadOrder;
+      'api::user-activity.user-activity': ApiUserActivityUserActivity;
       'api::wishlist.wishlist': ApiWishlistWishlist;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
