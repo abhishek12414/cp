@@ -1,17 +1,17 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, Button } from "react-native-paper";
+import { Button, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 interface OfflineScreenProps {
   onRetry?: () => void;
 }
 
-export function OfflineScreen({ onRetry }: OfflineScreenProps) {
+const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
   const colorScheme =
     useThemeColor({}, "background") === Colors.light.background
       ? "light"
