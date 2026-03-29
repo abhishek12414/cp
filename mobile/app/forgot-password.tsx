@@ -81,7 +81,7 @@ export default function ForgotPasswordScreen() {
             </View>
             <Text style={styles.successTitle}>Check Your Email</Text>
             <Text style={styles.successMessage}>
-              We've sent a password reset link to:
+              We&apos;ve sent a password reset link to:
             </Text>
             <Text style={styles.emailText}>{submittedEmail}</Text>
             <Text style={styles.successHint}>
@@ -104,7 +104,7 @@ export default function ForgotPasswordScreen() {
               style={styles.resendContainer}
             >
               <Text style={[styles.resendText, { color: primaryColor }]}>
-                Didn't receive the email? Resend
+                Didn&apos;t receive the email? Resend
               </Text>
             </TouchableOpacity>
           </View>
@@ -149,7 +149,7 @@ export default function ForgotPasswordScreen() {
             <View style={styles.formContainer}>
               <Text style={styles.welcomeText}>Forgot Password?</Text>
               <Text style={styles.subtitleText}>
-                Enter your email address and we'll send you a link to reset your password.
+                Enter your email address and we&apos;ll send you a link to reset your password.
               </Text>
 
               <Formik

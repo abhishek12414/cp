@@ -27,11 +27,11 @@ const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
           </View>
           
           <Text variant="headlineMedium" style={styles.title}>
-            You're Offline
+            You&apos;re Offline
           </Text>
           
           <Text variant="bodyLarge" style={styles.subtitle}>
-            It seems you've lost your internet connection. Please check your network settings and try again.
+            It seems you&apos;ve lost your internet connection. Please check your network settings and try again.
           </Text>
 
           <Button

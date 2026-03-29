@@ -113,7 +113,7 @@ export default function SignupScreen() {
             </View>
             <Text style={styles.successTitle}>Verify Your Email</Text>
             <Text style={styles.successMessage}>
-              We've sent a verification link to:
+              We&apos;ve sent a verification link to:
             </Text>
             <Text style={styles.emailText}>{signupEmail}</Text>
             <Text style={styles.successHint}>
@@ -135,7 +135,7 @@ export default function SignupScreen() {
               style={styles.resendContainer}
             >
               <Text style={[styles.resendText, { color: primaryColor }]}>
-                Didn't receive the email? Resend
+                Didn&apos;t receive the email? Resend
               </Text>
             </TouchableOpacity>
           </View>
