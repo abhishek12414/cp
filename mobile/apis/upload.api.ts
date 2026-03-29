@@ -1,6 +1,6 @@
 import apiClient from "./apiClient";
 
-export const uploadApi = {
+const uploadApi = {
   /**
    * Upload a file to Strapi's upload endpoint
    * @param file - FormData containing the file to upload

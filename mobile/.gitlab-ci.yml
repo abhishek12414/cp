@@ -1,0 +1,118 @@
+image: node:20-bullseye
+
+stages:
+  - verify
+  - build
+
+variables:
+  NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
+  EAS_CACHE_DIR: "$CI_PROJECT_DIR/.eas"
+
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - .npm/
+    - .eas/
+    - node_modules/
+
+.default_job: &default_job
+  before_script:
+    - node --version
+    - npm --version
+    - npm ci
+    - npx eas-cli --version
+
+.build_job: &build_job
+  before_script:
+    - node --version
+    - npm --version
+    - npm ci
+    - npx eas-cli --version
+    - |
+      if [ -z "$EXPO_TOKEN" ]; then
+        echo "EXPO_TOKEN is missing. Add it in GitLab CI/CD Variables."
+        exit 1
+      fi
+      if [ -z "$EXPO_OWNER" ]; then
+        echo "EXPO_OWNER is missing. Add your Expo account or organization name in GitLab CI/CD Variables."
+        exit 1
+      fi
+      if [ -z "$EXPO_PROJECT_ID" ]; then
+        echo "EXPO_PROJECT_ID is missing. Add the EAS project id in GitLab CI/CD Variables."
+        exit 1
+      fi
+      if [ "$TARGET_PLATFORM" = "android" ] && [ -z "$EXPO_ANDROID_PACKAGE" ]; then
+        echo "EXPO_ANDROID_PACKAGE is missing. Add your Android package name in GitLab CI/CD Variables."
+        exit 1
+      fi
+      if [ "$TARGET_PLATFORM" = "ios" ] && [ -z "$EXPO_IOS_BUNDLE_IDENTIFIER" ]; then
+        echo "EXPO_IOS_BUNDLE_IDENTIFIER is missing. Add your iOS bundle identifier in GitLab CI/CD Variables."
+        exit 1
+      fi
+      if [ ! -f ".env.${APP_ENV}" ]; then
+        echo "Missing .env.${APP_ENV}. Create the file or change APP_ENV for this job/profile."
+        ls -1 .env* || true
+        exit 1
+      fi
+
+lint:
+  stage: verify
+  extends: .default_job
+  allow_failure: true
+  script:
+    - npm run lint
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
+
+build_android_preview:
+  stage: build
+  extends: .build_job
+  variables:
+    APP_ENV: staging
+    TARGET_PLATFORM: android
+  script:
+    - npx eas-cli build --platform android --profile preview --non-interactive
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+
+build_ios_preview:
+  stage: build
+  extends: .build_job
+  variables:
+    APP_ENV: staging
+    TARGET_PLATFORM: ios
+  script:
+    - npx eas-cli build --platform ios --profile preview --non-interactive
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+
+build_android_production:
+  stage: build
+  extends: .build_job
+  variables:
+    APP_ENV: production
+    TARGET_PLATFORM: android
+  script:
+    - npx eas-cli build --platform android --profile production --non-interactive
+  rules:
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+
+build_ios_production:
+  stage: build
+  extends: .build_job
+  variables:
+    APP_ENV: production
+    TARGET_PLATFORM: ios
+  script:
+    - npx eas-cli build --platform ios --profile production --non-interactive
+  rules:
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual

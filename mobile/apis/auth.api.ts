@@ -1,6 +1,6 @@
+import { AuthResponseInterface } from "@/interface";
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
-import { AuthResponseInterface } from "@/interface";
 
 export interface LoginPayload {
   identifier: string;
@@ -51,7 +51,7 @@ export interface AuthMeResponse {
   updatedAt: string;
 }
 
-export const authApi = {
+const authApi = {
   login: (payload: LoginPayload) => {
     return apiClient.post<AuthResponseInterface>(apiRoutes.LOGIN, payload);
   },
