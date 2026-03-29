@@ -1,6 +1,6 @@
+import { ApiResponseInterface, ProductInterface } from "@/interface";
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
-import { ProductInterface, ApiResponseInterface } from "@/interface";
 
 export interface TrackActivityInput {
   type: 'search' | 'product_view' | 'product_purchase' | 'category_view' | 'brand_view';
@@ -24,7 +24,7 @@ export const userActivityApi = {
 
   // Get personalized recommendations
   getRecommendations: () => {
-    return apiClient.get<ApiResponseInterface<Product[]>>(apiRoutes.RECOMMENDATIONS);
+    return apiClient.get<ApiResponseInterface<ProductInterface[]>>(apiRoutes.RECOMMENDATIONS);
   },
 };
 
