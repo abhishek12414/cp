@@ -1,10 +1,20 @@
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Modal,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+} from "react-native";
 import * as ExpoImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
-import { Button } from "react-native-paper";
+import { Button, IconButton } from "react-native-paper";
 
 import uploadApi from "@/apis/upload.api";
+import { getImageUrl } from "@/helpers/image";
+import MediaPicker from "./MediaPicker";
+import { Colors } from "@/constants/Colors";
 
 interface ImagePickerProps {
   /**
@@ -66,18 +76,29 @@ interface ImagePickerProps {
    * Image quality (0-1)
    */
   quality?: number;
+
+  /**
+   * Whether to allow multiple image selection from media library
+   */
+  multiple?: boolean;
+
+  /**
+   * Page size for media library (10 or 20)
+   */
+  mediaPageSize?: 10 | 20;
 }
 
 /**
  * Reusable image picker component with upload functionality
  * Handles permission request, image selection, and upload to Strapi
+ * Also supports selecting images from the Strapi media library
  */
 export function ImagePicker({
   value,
   onUpload,
   onClear,
   placeholder = "No image selected",
-  buttonText = "Pick & Upload Image",
+  buttonText = "Pick Image",
   size = 100,
   disabled = false,
   label,
@@ -85,10 +106,16 @@ export function ImagePicker({
   aspect,
   allowsEditing = true,
   quality = 0.8,
+  multiple = false,
+  mediaPageSize = 20,
 }: ImagePickerProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+  const [mediaPickerVisible, setMediaPickerVisible] = useState(false);
 
   const handlePickImage = async () => {
+    setOptionsModalVisible(false);
+    
     try {
       // Request permission
       const permissionResult =
@@ -149,6 +176,19 @@ export function ImagePicker({
     }
   };
 
+  const handleSelectFromGallery = () => {
+    setOptionsModalVisible(false);
+    setMediaPickerVisible(true);
+  };
+
+  const handleMediaSelect = (files: Array<{ id: number; url: string }>) => {
+    if (files.length > 0) {
+      // For single selection, use the first file
+      const file = files[0];
+      onUpload(file.id, file.url);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -162,14 +202,16 @@ export function ImagePicker({
         ) : (
           <Text style={styles.placeholder}>{placeholder}</Text>
         )}
+        
         <Button
           mode="outlined"
-          onPress={handlePickImage}
+          onPress={() => setOptionsModalVisible(true)}
           disabled={disabled || isUploading}
           style={styles.button}
         >
           {isUploading ? "Uploading..." : buttonText}
         </Button>
+
         {value && onClear && (
           <Button
             mode="text"
@@ -183,6 +225,79 @@ export function ImagePicker({
         )}
       </View>
       {note && <Text style={styles.note}>{note}</Text>}
+
+      {/* Options Modal */}
+      <Modal
+        visible={optionsModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOptionsModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setOptionsModalVisible(false)}
+        >
+          <View style={styles.optionsContainer}>
+            <View style={styles.optionsContent}>
+              <Text style={styles.optionsTitle}>Select Image Source</Text>
+              
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={handlePickImage}
+              >
+                <IconButton
+                  icon="camera"
+                  size={24}
+                  iconColor={Colors.light.primary}
+                  style={styles.optionIcon}
+                />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionTitle}>Upload from Device</Text>
+                  <Text style={styles.optionSubtitle}>
+                    Pick and upload a new image from your device
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={handleSelectFromGallery}
+              >
+                <IconButton
+                  icon="image-multiple"
+                  size={24}
+                  iconColor={Colors.light.primary}
+                  style={styles.optionIcon}
+                />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionTitle}>Select from Gallery</Text>
+                  <Text style={styles.optionSubtitle}>
+                    Choose from previously uploaded images
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <Button
+                mode="text"
+                onPress={() => setOptionsModalVisible(false)}
+                style={styles.cancelOption}
+              >
+                Cancel
+              </Button>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Media Library Picker Modal */}
+      <MediaPicker
+        visible={mediaPickerVisible}
+        onClose={() => setMediaPickerVisible(false)}
+        onSelect={handleMediaSelect}
+        multiple={multiple}
+        pageSize={mediaPageSize}
+      />
     </View>
   );
 }
@@ -220,6 +335,55 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontStyle: "italic",
     textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  optionsContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 34,
+  },
+  optionsContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingVertical: 8,
+  },
+  optionsTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  optionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  optionIcon: {
+    margin: 0,
+    marginRight: 8,
+  },
+  optionTextContainer: {
+    flex: 1,
+  },
+  optionTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  optionSubtitle: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 2,
+  },
+  cancelOption: {
+    marginTop: 8,
   },
 });
 

@@ -1,9 +1,10 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState, useCallback, useMemo } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, StyleSheet, View, Dimensions, ScrollView } from "react-native";
 import { ActivityIndicator, IconButton, Text, Chip, Button } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
 
 import { ThemedView } from "@/components/ThemedView";
 import ProductCard from "@/components/ui/ProductCard";
@@ -14,6 +15,9 @@ import { Colors } from "@/constants/Colors";
 import { useCategoryWithAttributes, useProducts, useBrand } from "@/hooks/queries";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ProductFilterState, AttributeInterface } from "@/interface";
+import { extractMediaUrl } from "@/helpers/image";
+
+const { width } = Dimensions.get("window");
 
 export default function CategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -109,6 +113,9 @@ export default function CategoryScreen() {
     }));
   }, [brands]);
 
+  // Get category image URL
+  const categoryImageUrl = extractMediaUrl(category?.image);
+
   if (isLoadingCategory) {
     return (
       <ThemedView style={styles.loadingContainer}>
@@ -122,19 +129,58 @@ export default function CategoryScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <IconButton icon="arrow-left" size={24} onPress={handleGoBack} />
-          <Text variant="headlineSmall" style={styles.headerTitle}>
-            {category?.name}
-          </Text>
-          <IconButton
-            icon="filter-variant"
-            size={24}
-            onPress={handleOpenFilter}
-            containerColor={activeFilterCount > 0 ? primaryColor : undefined}
-            iconColor={activeFilterCount > 0 ? "#fff" : undefined}
-          />
-        </View>
+        {/* Category Banner with Image */}
+        {categoryImageUrl && (
+          <View style={styles.bannerContainer}>
+            <Image
+              source={{ uri: categoryImageUrl }}
+              style={styles.bannerImage}
+              contentFit="cover"
+            />
+            <View style={styles.bannerOverlay}>
+              <IconButton
+                icon="arrow-left"
+                size={24}
+                onPress={handleGoBack}
+                iconColor="#fff"
+                style={styles.bannerBackButton}
+              />
+              <View style={styles.bannerTitleContainer}>
+                <Text variant="headlineSmall" style={styles.bannerTitle}>
+                  {category?.name}
+                </Text>
+                <Text variant="bodySmall" style={styles.bannerSubtitle}>
+                  {categoryProducts?.length || 0} products
+                </Text>
+              </View>
+              <IconButton
+                icon="filter-variant"
+                size={24}
+                onPress={handleOpenFilter}
+                iconColor={activeFilterCount > 0 ? primaryColor : "#fff"}
+                containerColor={activeFilterCount > 0 ? "#fff" : "rgba(255,255,255,0.2)"}
+                style={styles.bannerFilterButton}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Simple header when no image */}
+        {!categoryImageUrl && (
+          <View style={styles.header}>
+            <IconButton icon="arrow-left" size={24} onPress={handleGoBack} />
+            <Text variant="headlineSmall" style={styles.headerTitle}>
+              {category?.name}
+            </Text>
+            <IconButton
+              icon="filter-variant"
+              size={24}
+              onPress={handleOpenFilter}
+              containerColor={activeFilterCount > 0 ? primaryColor : undefined}
+              iconColor={activeFilterCount > 0 ? "#fff" : undefined}
+            />
+          </View>
+        )}
 
         {/* Active filters display */}
         {activeFilterCount > 0 && (
@@ -288,6 +334,47 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  bannerContainer: {
+    height: 180,
+    position: "relative",
+  },
+  bannerImage: {
+    width: width,
+    height: 180,
+  },
+  bannerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+  },
+  bannerBackButton: {
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  bannerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  bannerTitle: {
+    fontWeight: "700",
+    color: "#fff",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  bannerSubtitle: {
+    color: "rgba(255,255,255,0.9)",
+    marginTop: 2,
+  },
+  bannerFilterButton: {
+    margin: 0,
   },
   header: {
     flexDirection: "row",

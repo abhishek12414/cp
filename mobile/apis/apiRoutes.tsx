@@ -2,6 +2,7 @@
 // remove the fallback below. Expo also exposes public env vars prefixed with
 // EXPO_PUBLIC_. Use `EXPO_PUBLIC_API_URL` for apps built with EAS or Expo.
 export const API_URL = process.env.API_URL;
+console.log("🚀 ~ API_URL:", API_URL);
 const apiV1 = "/api";
 
 export const apiRoutes = {

@@ -10,6 +10,12 @@ export type AuthState = {
   error: string | null;
 };
 
+export type UserRole = {
+  id: number;
+  name: string;
+  type: string;
+};
+
 export type User = {
   id: number | string;
   email: string;
@@ -20,6 +26,7 @@ export type User = {
   provider?: string;
   confirmed?: boolean;
   blocked?: boolean;
+  role?: UserRole;
 };
 
 const initialState: AuthState = {

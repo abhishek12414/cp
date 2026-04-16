@@ -30,7 +30,7 @@ import {
   useBrandCategoryProducts,
   useBrandFeaturedProducts,
 } from "@/hooks/queries/useBrand";
-import { getImageUrl } from "@/helpers/image";
+import { getImageUrl, extractMediaUrl } from "@/helpers/image";
 import { CategoryInterface, ProductInterface } from "@/interface";
 
 const { width } = Dimensions.get("window");
@@ -165,7 +165,7 @@ export default function BrandScreen() {
     );
   }
 
-  const brandLogoUri = getImageUrl(brand.logo?.data?.attributes?.url);
+  const brandLogoUri = extractMediaUrl(brand.logo);
 
   return (
     <ThemedView style={styles.container}>
@@ -417,7 +417,7 @@ const CategorySection = ({
     shouldLoad
   );
 
-  const categoryImageUri = getImageUrl(category.image?.data?.attributes?.url);
+  const categoryImageUri = extractMediaUrl(category.image);
 
   return (
     <Surface

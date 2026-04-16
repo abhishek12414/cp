@@ -1,4 +1,7 @@
 import { Stack } from "expo-router";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 export default function AdminLayout() {
   return (
@@ -15,6 +18,14 @@ export default function AdminLayout() {
           headerTitleStyle: {
             fontWeight: 'bold',
           },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.replace("/(tabs)")}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+          ),
         }} 
       />
       {/* Sub-screens for management sections.

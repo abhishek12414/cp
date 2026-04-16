@@ -89,6 +89,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
           provider: userData.provider,
           confirmed: userData.confirmed,
           blocked: userData.blocked,
+          role: userData.role,
         };
 
         dispatch(initializeSuccess({ user, token }));
@@ -244,6 +245,7 @@ function RootNavigator() {
           provider: userData.provider,
           confirmed: userData.confirmed,
           blocked: userData.blocked,
+          role: userData.role,
         };
         dispatch(initializeSuccess({ user, token }));
       }

@@ -38,6 +38,12 @@ export interface AuthUser {
   updatedAt: string;
 }
 
+export interface UserRole {
+  id: number;
+  name: string;
+  type: string;
+}
+
 export interface AuthMeResponse {
   id: number;
   username: string;
@@ -47,6 +53,7 @@ export interface AuthMeResponse {
   blocked: boolean;
   phone?: string;
   name?: string;
+  role?: UserRole;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,7 +83,7 @@ const authApi = {
   },
 
   getMe: () => {
-    return apiClient.get<AuthMeResponse>(apiRoutes.ME);
+    return apiClient.get<AuthMeResponse>(`${apiRoutes.ME}?populate=role`);
   },
 
   updateUser: (id: string, data: Partial<AuthResponseInterface["user"]>) => {

@@ -1,18 +1,16 @@
 import React from "react";
-import { StyleSheet, ScrollView, View } from "react-native";
-import { Text } from "react-native-paper";
+import { StyleSheet, ScrollView, View, RefreshControl } from "react-native";
+import { Text, ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 
 import { ThemedView } from "@/components/ThemedView";
 import { CategoryCard } from "@/components/ui/CategoryCard";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useCategories } from "@/hooks/queries";
 import { Colors } from "@/constants/Colors";
-
-// Import mock data
-import { categories } from "@/mock/categories";
+import { CategoryInterface } from "@/interface";
 
 export default function CategoriesScreen() {
   const colorScheme =
@@ -20,15 +18,11 @@ export default function CategoriesScreen() {
       ? "light"
       : "dark";
 
-  // React Query hook to fetch categories
-  const { data: categoriesData } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => Promise.resolve(categories),
-    initialData: categories,
-  });
+  // Fetch categories from API
+  const { data: categoriesData, isLoading, refetch, isRefetching } = useCategories();
 
-  const handleCategoryPress = (id: string) => {
-    router.push(`/category/${id}`);
+  const handleCategoryPress = (category: CategoryInterface) => {
+    router.push(`/category/${category.documentId}`);
   };
 
   return (
@@ -44,23 +38,50 @@ export default function CategoriesScreen() {
           </Text>
         </View>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContainer}
-        >
-          <View style={styles.categoriesGrid}>
-            {categoriesData?.map((item) => (
-              <View key={item.id} style={styles.categoryWrapper}>
-                <CategoryCard
-                  id={item.id}
-                  name={item.name}
-                  image={item.image}
-                  onPress={handleCategoryPress}
-                />
-              </View>
-            ))}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator
+              animating
+              size="large"
+              color={Colors[colorScheme].primary}
+            />
+            <Text variant="bodyMedium" style={styles.loadingText}>
+              Loading categories...
+            </Text>
           </View>
-        </ScrollView>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={refetch}
+                colors={[Colors[colorScheme].primary]}
+                tintColor={Colors[colorScheme].primary}
+              />
+            }
+          >
+            <View style={styles.categoriesGrid}>
+              {categoriesData?.map((category) => (
+                <View key={category.documentId} style={styles.categoryWrapper}>
+                  <CategoryCard
+                    data={category}
+                    onPress={handleCategoryPress}
+                  />
+                </View>
+              ))}
+            </View>
+
+            {categoriesData?.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <Text variant="bodyLarge" style={styles.emptyText}>
+                  No categories found
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        )}
       </SafeAreaView>
     </ThemedView>
   );
@@ -92,6 +113,15 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 14,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    color: "#666",
+  },
   scrollContainer: {
     padding: 16,
     paddingBottom: 32,
@@ -99,10 +129,20 @@ const styles = StyleSheet.create({
   categoriesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
   },
   categoryWrapper: {
-    width: "48%",
+    width: "25%",
     marginBottom: 16,
+    alignItems: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyText: {
+    color: "#666",
   },
 });
