@@ -1,36 +1,54 @@
-import React from "react";
-import { StyleSheet, ScrollView, View, FlatList, Image } from "react-native";
+import React, { useState, useCallback } from "react";
+import {
+  StyleSheet,
+  View,
+  FlatList,
+  Alert,
+  RefreshControl,
+} from "react-native";
 import { Text, Button, IconButton, Divider, Surface } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import { useSelector, useDispatch } from "react-redux";
+import { Image } from "expo-image";
 
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
-import { RootState } from "@/store";
 import {
-  removeFromCart,
-  updateQuantity,
-  clearCart,
-} from "@/reducers/cart.reducer";
+  useCart,
+  useUpdateCartItem,
+  useRemoveFromCart,
+  useClearCart,
+} from "@/hooks/queries/useCart";
+import { CartItemInterface } from "@/interface";
+import { getImageUrl } from "@/helpers/image";
+import LoadingScreen from "@/components/LoadingScreen";
+import OfflineScreen from "@/components/OfflineScreen";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export default function CartScreen() {
-  const dispatch = useDispatch();
-  const cart = useSelector((state: RootState) => state.cart);
   const colorScheme =
     useThemeColor({}, "background") === Colors.light.background
       ? "light"
       : "dark";
   const primaryColor = Colors[colorScheme].primary;
+  
+  const { data: cart, isLoading, error, refetch } = useCart();
+  const updateCartItem = useUpdateCartItem();
+  const removeFromCart = useRemoveFromCart();
+  const clearCart = useClearCart();
+  const { isConnected } = useNetworkStatus();
+  
+  const [refreshing, setRefreshing] = useState(false);
 
   // Calculate cart totals
-  const subtotal = cart.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+  const cartItems = cart?.cartItems || [];
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + (item.product?.price || 0) * item.quantity,
     0
   );
-  const tax = subtotal * 0.18; // 18% GST for example
+  const tax = subtotal * 0.18; // 18% GST
   const shipping = subtotal > 1000 ? 0 : 100; // Free shipping over ₹1000
   const total = subtotal + tax + shipping;
 
@@ -38,80 +56,185 @@ export default function CartScreen() {
     router.back();
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    dispatch(removeFromCart(itemId));
-  };
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
-  const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
-    if (newQuantity > 0) {
-      dispatch(updateQuantity({ id: itemId, quantity: newQuantity }));
-    } else {
-      dispatch(removeFromCart(itemId));
+  const handleUpdateQuantity = async (item: CartItemInterface, newQuantity: number) => {
+    if (newQuantity < 1) {
+      handleRemoveItem(item);
+      return;
+    }
+
+    // Check stock
+    const stockQuantity = item.product?.stockQuantity ?? item.product?.stock ?? 0;
+    if (newQuantity > stockQuantity) {
+      Alert.alert(
+        "Insufficient Stock",
+        `Only ${stockQuantity} items available.`
+      );
+      return;
+    }
+
+    try {
+      await updateCartItem.mutateAsync({
+        cartItemId: item.documentId,
+        quantity: newQuantity,
+      });
+    } catch (error) {
+      // Error handled in hook
     }
   };
 
+  const handleRemoveItem = async (item: CartItemInterface) => {
+    Alert.alert(
+      "Remove Item",
+      `Remove ${item.product?.name || "this item"} from cart?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await removeFromCart.mutateAsync(item.documentId);
+            } catch (error) {
+              // Error handled in hook
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleClearCart = () => {
-    dispatch(clearCart());
+    Alert.alert(
+      "Clear Cart",
+      "Are you sure you want to remove all items from your cart?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearCart.mutateAsync();
+            } catch (error) {
+              // Error handled in hook
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleCheckout = () => {
-    if (cart.items.length > 0) {
+    if (cartItems.length > 0) {
       router.push("/checkout");
     }
   };
 
-  const renderCartItem = ({ item }) => (
-    <Surface style={styles.cartItemContainer}>
-      <Image source={{ uri: item.image }} style={styles.productImage} />
+  const renderCartItem = ({ item }: { item: CartItemInterface }) => {
+    const productImage = item.product?.images?.[0]?.url
+      ? getImageUrl(item.product.images[0].url)
+      : null;
+    const productPrice = item.product?.price || 0;
+    const stockQuantity = item.product?.stockQuantity ?? item.product?.stock ?? 0;
+    const isLowStock = stockQuantity > 0 && stockQuantity <= 5;
+    const isOutOfStock = stockQuantity === 0;
 
-      <View style={styles.productInfo}>
-        <Text
-          variant="titleMedium"
-          numberOfLines={2}
-          style={styles.productName}
-        >
-          {item.name}
-        </Text>
-
-        <Text variant="bodyMedium" style={styles.productPrice}>
-          ₹{item.price.toFixed(2)}
-        </Text>
-
-        <View style={styles.quantityContainer}>
-          <IconButton
-            icon="minus"
-            size={16}
-            mode="outlined"
-            onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+    return (
+      <Surface style={[styles.cartItemContainer, isOutOfStock && styles.outOfStockItem]}>
+        {productImage ? (
+          <Image
+            source={{ uri: productImage }}
+            style={styles.productImage}
+            contentFit="cover"
           />
+        ) : (
+          <View style={[styles.productImage, styles.noImage]}>
+            <Text style={styles.noImageText}>No Image</Text>
+          </View>
+        )}
 
-          <Text variant="titleMedium" style={styles.quantityText}>
-            {item.quantity}
+        <View style={styles.productInfo}>
+          <Text
+            variant="titleMedium"
+            numberOfLines={2}
+            style={styles.productName}
+          >
+            {item.product?.name || "Unknown Product"}
           </Text>
 
-          <IconButton
-            icon="plus"
-            size={16}
-            mode="outlined"
-            onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-          />
+          {item.product?.brand && (
+            <Text variant="bodySmall" style={styles.brandName}>
+              {item.product.brand.name}
+            </Text>
+          )}
 
-          <View style={styles.spacer} />
-
-          <Text variant="titleMedium">
-            ₹{(item.price * item.quantity).toFixed(2)}
+          <Text variant="bodyMedium" style={styles.productPrice}>
+            ₹{productPrice.toFixed(0)}
           </Text>
+
+          {isOutOfStock && (
+            <Text style={styles.outOfStockText}>Out of Stock</Text>
+          )}
+
+          {isLowStock && !isOutOfStock && (
+            <Text style={styles.lowStockText}>Only {stockQuantity} left</Text>
+          )}
+
+          <View style={styles.quantityContainer}>
+            <IconButton
+              icon="minus"
+              size={16}
+              mode="outlined"
+              onPress={() => handleUpdateQuantity(item, item.quantity - 1)}
+              disabled={updateCartItem.isPending}
+            />
+
+            <Text variant="titleMedium" style={styles.quantityText}>
+              {item.quantity}
+            </Text>
+
+            <IconButton
+              icon="plus"
+              size={16}
+              mode="outlined"
+              onPress={() => handleUpdateQuantity(item, item.quantity + 1)}
+              disabled={updateCartItem.isPending || item.quantity >= stockQuantity}
+            />
+
+            <View style={styles.spacer} />
+
+            <Text variant="titleMedium" style={styles.itemTotal}>
+              ₹{(productPrice * item.quantity).toFixed(0)}
+            </Text>
+          </View>
         </View>
-      </View>
 
-      <IconButton
-        icon="close"
-        size={20}
-        onPress={() => handleRemoveItem(item.id)}
-        style={styles.removeButton}
-      />
-    </Surface>
-  );
+        <IconButton
+          icon="close"
+          size={20}
+          onPress={() => handleRemoveItem(item)}
+          style={styles.removeButton}
+          disabled={removeFromCart.isPending}
+        />
+      </Surface>
+    );
+  };
+
+  // Loading state
+  if (isLoading && !cart) {
+    return <LoadingScreen message="Loading cart..." />;
+  }
+
+  // Error state
+  if (error && !isConnected) {
+    return <OfflineScreen onRetry={() => refetch()} />;
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -122,15 +245,20 @@ export default function CartScreen() {
           <Text variant="headlineSmall" style={styles.headerTitle}>
             Shopping Cart
           </Text>
-          {cart.items.length > 0 && (
-            <Button onPress={handleClearCart} textColor="red">
+          {cartItems.length > 0 && (
+            <Button
+              onPress={handleClearCart}
+              textColor="red"
+              disabled={clearCart.isPending}
+            >
               Clear
             </Button>
           )}
         </View>
 
-        {cart.items.length === 0 ? (
+        {cartItems.length === 0 ? (
           <View style={styles.emptyCartContainer}>
+            <Text variant="displaySmall" style={styles.emptyIcon}>🛒</Text>
             <Text variant="titleLarge" style={styles.emptyCartText}>
               Your cart is empty
             </Text>
@@ -149,27 +277,37 @@ export default function CartScreen() {
         ) : (
           <>
             <FlatList
-              data={cart.items}
+              data={cartItems}
               renderItem={renderCartItem}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.documentId}
               contentContainerStyle={styles.cartItemsList}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                />
+              }
             />
 
             <Surface style={styles.summaryContainer}>
               <View style={styles.summaryRow}>
-                <Text variant="bodyLarge">Subtotal</Text>
-                <Text variant="bodyLarge">₹{subtotal.toFixed(2)}</Text>
+                <Text variant="bodyLarge">Subtotal ({cartItems.length} items)</Text>
+                <Text variant="bodyLarge">₹{subtotal.toFixed(0)}</Text>
               </View>
 
               <View style={styles.summaryRow}>
                 <Text variant="bodyMedium">GST (18%)</Text>
-                <Text variant="bodyMedium">₹{tax.toFixed(2)}</Text>
+                <Text variant="bodyMedium">₹{tax.toFixed(0)}</Text>
               </View>
 
               <View style={styles.summaryRow}>
                 <Text variant="bodyMedium">Shipping</Text>
                 <Text variant="bodyMedium">
-                  {shipping === 0 ? "Free" : `₹${shipping.toFixed(2)}`}
+                  {shipping === 0 ? (
+                    <Text style={styles.freeShipping}>Free</Text>
+                  ) : (
+                    `₹${shipping.toFixed(0)}`
+                  )}
                 </Text>
               </View>
 
@@ -177,7 +315,9 @@ export default function CartScreen() {
 
               <View style={styles.summaryRow}>
                 <Text variant="titleLarge">Total</Text>
-                <Text variant="titleLarge">₹{total.toFixed(2)}</Text>
+                <Text variant="titleLarge" style={styles.totalAmount}>
+                  ₹{total.toFixed(0)}
+                </Text>
               </View>
 
               <Button
@@ -221,23 +361,54 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: 12,
     marginBottom: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     elevation: 2,
+  },
+  outOfStockItem: {
+    opacity: 0.7,
+    backgroundColor: "#fff5f5",
   },
   productImage: {
     width: 80,
     height: 80,
     borderRadius: 8,
+    backgroundColor: "#f5f5f5",
+  },
+  noImage: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noImageText: {
+    fontSize: 10,
+    color: "#999",
   },
   productInfo: {
     flex: 1,
     marginLeft: 12,
   },
   productName: {
-    fontWeight: "500",
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  brandName: {
+    color: "#666",
+    textTransform: "uppercase",
+    marginBottom: 2,
   },
   productPrice: {
-    marginTop: 4,
+    fontWeight: "600",
+    color: "#1a1a1a",
+  },
+  outOfStockText: {
+    color: "#ff3b30",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  lowStockText: {
+    color: "#ff9500",
+    fontSize: 12,
+    marginTop: 2,
   },
   quantityContainer: {
     flexDirection: "row",
@@ -246,12 +417,18 @@ const styles = StyleSheet.create({
   },
   quantityText: {
     marginHorizontal: 8,
+    minWidth: 24,
+    textAlign: "center",
   },
   spacer: {
     flex: 1,
   },
+  itemTotal: {
+    fontWeight: "700",
+  },
   removeButton: {
     alignSelf: "flex-start",
+    margin: 0,
   },
   summaryContainer: {
     padding: 16,
@@ -264,13 +441,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12,
   },
+  freeShipping: {
+    color: "#34c759",
+    fontWeight: "600",
+  },
   divider: {
     marginVertical: 12,
+  },
+  totalAmount: {
+    fontWeight: "700",
   },
   checkoutButton: {
     marginTop: 16,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   checkoutButtonLabel: {
     fontSize: 16,
@@ -282,8 +466,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
+  emptyIcon: {
+    marginBottom: 16,
+  },
   emptyCartText: {
-    fontWeight: "bold",
+    fontWeight: "700",
     marginBottom: 8,
   },
   emptyCartSubtext: {
@@ -293,6 +480,6 @@ const styles = StyleSheet.create({
   },
   shopNowButton: {
     paddingHorizontal: 32,
-    borderRadius: 8,
+    borderRadius: 12,
   },
 });

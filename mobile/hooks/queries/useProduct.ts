@@ -4,11 +4,16 @@ import apiClient from "@/apis/apiClient";
 import { apiRoutes } from "@/apis/apiRoutes";
 import { getQueryString } from "@/helpers/queryParams";
 import { ApiResponseInterface, ProductInterface } from "@/interface";
+import { QUERY_CONFIG } from "@/config/queryConfig";
 
 const populate = "*";
-export type ProductFilters = Record<string, any>;
+export type ProductFilters = Record<string, unknown>;
 
-export const useProducts = (filters: Record<string, any>) => {
+/**
+ * Hook to fetch products list with filters
+ * Uses semiStatic config - products change occasionally
+ */
+export const useProducts = (filters: Record<string, unknown>) => {
   return useQuery<ProductInterface[]>({
     queryKey: ["products", filters],
     queryFn: async () => {
@@ -20,11 +25,14 @@ export const useProducts = (filters: Record<string, any>) => {
       );
       return response.data.data;
     },
-    initialData: [],
-    staleTime: 0,
+    ...QUERY_CONFIG.semiStatic,
   });
 };
 
+/**
+ * Hook to fetch a single product by documentId
+ * Uses detail config - single item view
+ */
 export const useProductByDocumentId = (documentId: string) => {
   return useQuery<ProductInterface | null>({
     queryKey: ["product", documentId],
@@ -41,11 +49,14 @@ export const useProductByDocumentId = (documentId: string) => {
       return response.data.data[0] || null;
     },
     enabled: !!documentId,
-    staleTime: 0,
+    ...QUERY_CONFIG.detail,
   });
 };
 
-// Hook to search products by name or description
+/**
+ * Hook to search products by name or description
+ * Uses search config - short-lived, user expects fresh results
+ */
 export const useSearchProducts = (query: string, enabled: boolean = true) => {
   return useQuery<ProductInterface[]>({
     queryKey: ["searchProducts", query],
@@ -66,6 +77,6 @@ export const useSearchProducts = (query: string, enabled: boolean = true) => {
       return response.data.data;
     },
     enabled: enabled && query.length >= 2,
-    staleTime: 0,
+    ...QUERY_CONFIG.search,
   });
 };

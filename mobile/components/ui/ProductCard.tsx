@@ -1,19 +1,19 @@
 import React, { useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View, Alert } from "react-native";
 import { IconButton, Text } from "react-native-paper";
 import { Image } from "expo-image";
 
 import { ProductInterface } from "@/interface";
 import { getImageUrl } from "@/helpers/image";
 import { shareProduct } from "@/helpers/share";
-import { useIsInWishlist, useToggleWishlist } from "@/hooks/queries";
+import { useIsInWishlist, useToggleWishlist, useIsInCart, useAddToCart } from "@/hooks/queries";
 
 const { width } = Dimensions.get("window");
 
 export type ProductCardProps = {
   data: ProductInterface;
   onPress: (id: string) => void;
-  onAddToCart: (id: string) => void;
+  onAddToCart?: (id: string) => void;
   onAddToWishlist?: (id: string) => void;
 };
 
@@ -25,7 +25,6 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const {
     documentId,
-    id,
     name,
     price,
     comparePrice,
@@ -35,21 +34,28 @@ const ProductCard = ({
     reviewCount,
     isFeatured,
     stock,
+    stockQuantity,
     lowStockThreshold,
   } = data;
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  
   const productImages = images || [];
   const hasMultipleImages = productImages.length > 1;
   const discountPrice = comparePrice;
   const hasDiscount =
     discountPrice !== undefined && discountPrice < price && discountPrice > 0;
-  const stockValue = data.stockQuantity ?? stock ?? 0;
-  const isLowStock = stockValue <= (lowStockThreshold || 0);
+  const currentStock = stockQuantity ?? stock ?? 0;
+  const isLowStock = currentStock > 0 && currentStock <= (lowStockThreshold || 5);
+  const isOutOfStock = currentStock === 0;
 
   // Wishlist hooks
   const isInWishlist = useIsInWishlist(documentId);
   const toggleWishlist = useToggleWishlist();
+
+  // Cart hooks
+  const { isInCart, quantity: cartQuantity } = useIsInCart(documentId);
+  const addToCartMutation = useAddToCart();
 
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
@@ -57,10 +63,40 @@ const ProductCard = ({
     setActiveImageIndex(Math.max(0, Math.min(index, productImages.length - 1)));
   };
 
+  const handleAddToCart = () => {
+    if (isOutOfStock) return;
+    
+    // Add directly with quantity 1
+    addToCartMutation.mutate({
+      product: documentId,
+      quantity: 1,
+      productData: data,
+    }, {
+      onSuccess: () => {
+        onAddToCart?.(documentId);
+      }
+    });
+  };
+
+  const handleCardPress = () => {
+    onPress(documentId);
+  };
+
+  const handleWishlistPress = () => {
+    toggleWishlist.mutate(documentId);
+    onAddToWishlist?.(documentId);
+  };
+
+  const handleSharePress = () => {
+    shareProduct(documentId, name, price);
+  };
+
+  const isAddingToCart = addToCartMutation.isPending;
+
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => onPress(documentId)}
+      onPress={handleCardPress}
       activeOpacity={0.9}
     >
       <View style={styles.imageContainer}>
@@ -76,7 +112,7 @@ const ProductCard = ({
               {productImages.map((img, index) => (
                 <View key={img.id || index} style={styles.imageWrapper}>
                   <Image
-                    source={{ uri: getImageUrl(img.url) }}
+                    source={{ uri: getImageUrl(img.url) || undefined }}
                     style={styles.image}
                     contentFit="cover"
                   />
@@ -116,19 +152,26 @@ const ProductCard = ({
       {hasDiscount && (
         <View style={styles.discountBadge}>
           <Text style={styles.discountText}>
-            {Math.round(((price - discountPrice) / price) * 100)}% OFF
+            {Math.round(((price - discountPrice!) / price) * 100)}% OFF
           </Text>
         </View>
       )}
-      {isLowStock && (
+      {isLowStock && !isOutOfStock && (
         <View style={styles.lowStockBadge}>
           <Text style={styles.lowStockText}>Low Stock</Text>
         </View>
       )}
-      {/* Wishlist Button */}
+      {isOutOfStock && (
+        <View style={styles.outOfStockBadge}>
+          <Text style={styles.outOfStockText}>Out of Stock</Text>
+        </View>
+      )}
+      
+      {/* Wishlist Button - stops propagation */}
       <TouchableOpacity
         style={styles.wishlistBtn}
-        onPress={() => toggleWishlist.mutate(documentId)}
+        onPress={handleWishlistPress}
+        activeOpacity={0.7}
       >
         <IconButton 
           icon={isInWishlist ? "heart" : "heart-outline"} 
@@ -136,10 +179,12 @@ const ProductCard = ({
           size={20} 
         />
       </TouchableOpacity>
-      {/* Share Button */}
+      
+      {/* Share Button - stops propagation */}
       <TouchableOpacity
         style={styles.shareBtn}
-        onPress={() => shareProduct(documentId, name, price)}
+        onPress={handleSharePress}
+        activeOpacity={0.7}
       >
         <IconButton icon="share-variant" iconColor="#fff" size={20} />
       </TouchableOpacity>
@@ -158,8 +203,8 @@ const ProductCard = ({
         <View style={styles.priceRow}>
           {hasDiscount ? (
             <>
-              <Text style={styles.discountPrice}>
-                ₹{discountPrice.toFixed(0)}
+              <Text style={styles.discountPriceText}>
+                ₹{discountPrice!.toFixed(0)}
               </Text>
               <Text style={styles.originalPrice}>₹{price.toFixed(0)}</Text>
             </>
@@ -167,12 +212,33 @@ const ProductCard = ({
             <Text style={styles.price}>₹{price.toFixed(0)}</Text>
           )}
         </View>
+        
+        {/* In Cart Indicator */}
+        {isInCart && (
+          <View style={styles.inCartIndicator}>
+            <Text style={styles.inCartText}>{cartQuantity} in cart</Text>
+          </View>
+        )}
+        
+        {/* Add to Cart Button - stops propagation */}
         <TouchableOpacity
-          style={styles.addToCartButton}
-          onPress={() => onAddToCart(documentId)}
+          style={[
+            styles.addToCartButton,
+            isOutOfStock && styles.outOfStockButton,
+          ]}
+          onPress={handleAddToCart}
           activeOpacity={0.8}
+          disabled={isOutOfStock || isAddingToCart}
         >
-          <Text style={styles.buttonText}>Add to Cart</Text>
+          <Text style={styles.buttonText}>
+            {isAddingToCart 
+              ? "Adding..." 
+              : isOutOfStock 
+                ? "Out of Stock" 
+                : isInCart 
+                  ? "Add More" 
+                  : "Add to Cart"}
+          </Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -278,6 +344,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
   },
+  outOfStockBadge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    backgroundColor: "#8E8E93",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  outOfStockText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+  },
   wishlistBtn: {
     position: "absolute",
     top: 4,
@@ -329,17 +410,17 @@ const styles = StyleSheet.create({
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   price: {
     fontSize: 18,
     fontWeight: "700",
     color: "#1a1a1a",
   },
-  discountPrice: {
+  discountPriceText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1a1a1a",
+    color: "#E53935",
     marginRight: 6,
   },
   originalPrice: {
@@ -347,11 +428,27 @@ const styles = StyleSheet.create({
     color: "#999",
     textDecorationLine: "line-through",
   },
+  inCartIndicator: {
+    backgroundColor: "#E3F2FD",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginBottom: 8,
+    alignSelf: "flex-start",
+  },
+  inCartText: {
+    fontSize: 11,
+    color: "#1976D2",
+    fontWeight: "600",
+  },
   addToCartButton: {
     backgroundColor: "#007AFF",
     paddingVertical: 10,
     borderRadius: 10,
     alignItems: "center",
+  },
+  outOfStockButton: {
+    backgroundColor: "#C7C7CC",
   },
   buttonText: {
     color: "#fff",
@@ -361,4 +458,3 @@ const styles = StyleSheet.create({
 });
 
 export default ProductCard;
-

@@ -15,6 +15,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ServiceCard } from "@/components/ui/ServiceCard";
 import { useBottomTabOverflow } from "@/components/ui/TabBarBackground";
 import { TrendingCategoryItem } from "@/components/ui/TrendingCategoryItem";
+import CartIcon from "@/components/ui/CartIcon";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
@@ -56,6 +57,10 @@ export default function HomeScreen() {
     router.push("/upload-order");
   };
 
+  const handleCartPress = () => {
+    router.push("/cart");
+  };
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
@@ -68,8 +73,10 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.actionsRow}>
-            <Avatar.Icon size={32} icon="bell-outline" style={styles.iconBtn} />
-            <Avatar.Icon size={32} icon="cart-outline" style={styles.iconBtn} />
+            <TouchableOpacity onPress={() => {}}>
+              <Avatar.Icon size={32} icon="bell-outline" style={styles.iconBtn} />
+            </TouchableOpacity>
+            <CartIcon onPress={handleCartPress} color="#333" size={24} />
           </View>
         </View>
         <TouchableOpacity onPress={handleSearchPress} activeOpacity={0.8}>

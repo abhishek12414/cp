@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import wishlistApi, { WishlistItem } from "@/apis/wishlist.api";
+import { QUERY_CONFIG } from "@/config/queryConfig";
 
 /**
  * Hook to get the current user's wishlist
+ * Uses semiStatic config - wishlist changes occasionally
  */
 export const useWishlist = () => {
   return useQuery<WishlistItem[]>({
@@ -11,7 +13,7 @@ export const useWishlist = () => {
       const response = await wishlistApi.getWishlist();
       return response.data.data || [];
     },
-    staleTime: 0,
+    ...QUERY_CONFIG.semiStatic,
   });
 };
 

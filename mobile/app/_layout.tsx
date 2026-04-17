@@ -3,11 +3,11 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Linking, AppState, AppStateStatus } from "react-native";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -25,12 +25,18 @@ import authApi from "@/apis/auth.api";
 import { User } from "@/reducers/auth.reducer";
 import OfflineScreen from "@/components/OfflineScreen";
 import LoadingScreen from "@/components/LoadingScreen";
+import { createQueryClient, setupQueryPersistence } from "@/config/queryClient";
+import { analytics } from "@/services/analytics";
+import {
+  initializeNetworkMonitoring,
+  useNetworkStatus,
+} from "@/hooks/useNetworkStatus";
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
-// Create a client for React Query
-const queryClient = new QueryClient();
+// Create query client with proper configuration
+const queryClient = createQueryClient();
 
 // Auth Provider Component
 function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -39,17 +45,8 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     (state: any) => state.auth
   );
   const [isChecking, setIsChecking] = useState(true);
-
-  // Check network connectivity
-  const checkConnectivity = useCallback(async () => {
-    try {
-      // Try to make a simple API call to check connectivity
-      await fetch("https://www.google.com", { method: "HEAD", mode: "no-cors" });
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
+  const { checkConnectivity } = useNetworkStatus();
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   // Initialize auth state
   const initializeAuth = useCallback(async () => {
@@ -93,10 +90,14 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         dispatch(initializeSuccess({ user, token }));
+        
+        // Set user ID for analytics
+        analytics.setUserId(String(user.id));
       } catch (error) {
         // Token is invalid or expired
         await AsyncStorage.removeItem("auth_token");
         dispatch(initializeFail());
+        analytics.setUserId(null);
       }
     } catch (error) {
       dispatch(initializeFail());
@@ -110,10 +111,14 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     const subscription = AppState.addEventListener(
       "change",
       (nextAppState: AppStateStatus) => {
-        if (nextAppState === "active") {
-          // Re-check auth when app comes to foreground
+        if (
+          appStateRef.current.match(/inactive|background/) &&
+          nextAppState === "active"
+        ) {
+          // App came to foreground, re-check auth
           initializeAuth();
         }
+        appStateRef.current = nextAppState;
       }
     );
 
@@ -154,9 +159,11 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       switch (parsed.type) {
         case "product":
           router.push(`/product/${parsed.id}`);
+          analytics.trackScreenView("product_detail", { product_id: parsed.id });
           break;
         case "category":
           router.push(`/category/${parsed.id}`);
+          analytics.trackScreenView("category", { category_id: parsed.id });
           break;
         default:
           console.log("Unknown deep link type:", parsed.type);
@@ -179,6 +186,40 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         }}
       />
     );
+  }
+
+  return <>{children}</>;
+}
+
+// App Initialization Component
+function AppInitializer({ children }: { children: React.ReactNode }) {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        // Initialize analytics
+        await analytics.initialize();
+
+        // Initialize network monitoring
+        await initializeNetworkMonitoring();
+
+        // Setup query persistence for offline support
+        await setupQueryPersistence(queryClient);
+
+        setIsReady(true);
+      } catch (error) {
+        console.error("App initialization failed:", error);
+        // Continue even if some initialization fails
+        setIsReady(true);
+      }
+    };
+
+    initialize();
+  }, []);
+
+  if (!isReady) {
+    return <LoadingScreen message="Loading cached data..." />;
   }
 
   return <>{children}</>;
@@ -211,9 +252,11 @@ export default function RootLayout() {
         <ThemeProvider
           value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
         >
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
+          <AppInitializer>
+            <AuthProvider>
+              <RootNavigator />
+            </AuthProvider>
+          </AppInitializer>
           <StatusBar style="auto" />
         </ThemeProvider>
       </QueryClientProvider>
@@ -227,10 +270,17 @@ function RootNavigator() {
     (state: any) => state.auth
   );
   const dispatch = useDispatch();
+  const { checkConnectivity } = useNetworkStatus();
 
   // Handle retry when offline
   const handleRetry = useCallback(async () => {
     try {
+      // Check connectivity first
+      const isConnected = await checkConnectivity();
+      if (!isConnected) {
+        return;
+      }
+
       // Try to reach the server
       const token = await AsyncStorage.getItem("auth_token");
       if (token) {
@@ -254,7 +304,7 @@ function RootNavigator() {
       // Still offline or auth failed
       console.log("Retry failed:", error);
     }
-  }, [dispatch]);
+  }, [dispatch, checkConnectivity]);
 
   // Show offline screen if device is offline but user was authenticated
   if (isOffline && isAuthenticated) {

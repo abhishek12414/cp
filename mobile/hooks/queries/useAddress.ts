@@ -2,7 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import addressApi from "@/apis/address.api";
 import { AddressInterface, AddressInput } from "@/interface";
+import { QUERY_CONFIG } from "@/config/queryConfig";
 
+/**
+ * Hook to fetch the current user's addresses
+ * Uses semiStatic config - addresses change occasionally
+ */
 export const useAddresses = () => {
   return useQuery<AddressInterface[]>({
     queryKey: ["addresses"],
@@ -10,11 +15,14 @@ export const useAddresses = () => {
       const response = await addressApi.getAddresses();
       return response.data.data;
     },
-    initialData: [],
-    staleTime: 0,
+    ...QUERY_CONFIG.semiStatic,
   });
 };
 
+/**
+ * Hook to fetch a single address by ID
+ * Uses detail config - single item view
+ */
 export const useAddress = (id: number | string) => {
   return useQuery<AddressInterface | null>({
     queryKey: ["address", id],
@@ -23,10 +31,13 @@ export const useAddress = (id: number | string) => {
       return response.data.data;
     },
     enabled: !!id,
-    staleTime: 0,
+    ...QUERY_CONFIG.detail,
   });
 };
 
+/**
+ * Hook to create a new address
+ */
 export const useCreateAddress = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -37,6 +48,9 @@ export const useCreateAddress = () => {
   });
 };
 
+/**
+ * Hook to update an existing address
+ */
 export const useUpdateAddress = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -49,6 +63,9 @@ export const useUpdateAddress = () => {
   });
 };
 
+/**
+ * Hook to delete an address
+ */
 export const useDeleteAddress = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -59,6 +76,9 @@ export const useDeleteAddress = () => {
   });
 };
 
+/**
+ * Hook to set an address as primary
+ */
 export const useSetPrimaryAddress = () => {
   const queryClient = useQueryClient();
   return useMutation({

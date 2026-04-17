@@ -44,7 +44,7 @@ export interface UploadedFile {
   url: string;
   previewUrl: string | null;
   provider: string;
-  provider_metadata: any | null;
+  provider_metadata: unknown | null;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
@@ -62,17 +62,18 @@ export interface UploadFilesResponse {
   };
 }
 
-// Cache for uploaded files to prevent repeated API calls
-let cachedFiles: UploadedFile[] | null = null;
-let cacheTimestamp: number = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+export interface GetFilesParams {
+  page?: number;
+  pageSize?: number;
+  sort?: string;
+  filters?: Record<string, unknown>;
+}
 
 /**
- * Clear the files cache (call this after uploading a new file)
+ * Clear any cached data (kept for backward compatibility)
  */
-export const clearFilesCache = () => {
-  cachedFiles = null;
-  cacheTimestamp = 0;
+export const clearFilesCache = (): void => {
+  // No-op - server-side pagination doesn't need client cache
 };
 
 const uploadApi = {
@@ -82,8 +83,6 @@ const uploadApi = {
    * @returns Promise with the upload response containing file metadata
    */
   uploadFile: (file: FormData) => {
-    // Clear cache when uploading a new file
-    clearFilesCache();
     return apiClient.post("/api/upload", file, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -92,74 +91,59 @@ const uploadApi = {
   },
 
   /**
-   * Fetch uploaded files from Strapi media library
-   * Note: Strapi's /api/upload/files returns all files (no server-side pagination)
-   * We implement client-side pagination by slicing the results
-   * Uses caching to prevent repeated API calls
-   * @param page - Page number for pagination
-   * @param pageSize - Number of items per page (default: 10, max: 20)
-   * @param sort - Sort field (default: 'createdAt:desc')
-   * @param forceRefresh - Force refresh cache (default: false)
-   * @returns Promise with the list of uploaded files
+   * Fetch uploaded files from Strapi media library with server-side pagination
+   * 
+   * IMPORTANT: This uses server-side pagination to avoid fetching all files at once.
+   * Strapi 5 supports pagination via query parameters.
+   * 
+   * @param params - Pagination and filter parameters
+   * @returns Promise with paginated list of uploaded files
    */
-  getFiles: async (
-    page: number = 1, 
-    pageSize: number = 10, 
-    sort: string = 'createdAt:desc',
-    forceRefresh: boolean = false
-  ): Promise<UploadFilesResponse> => {
-    const now = Date.now();
+  getFiles: async (params: GetFilesParams = {}): Promise<UploadFilesResponse> => {
+    const {
+      page = 1,
+      pageSize = 20,
+      sort = "createdAt:desc",
+      filters,
+    } = params;
+
+    // Build query parameters for Strapi REST API pagination
+    const queryParams = new URLSearchParams();
+    queryParams.append("sort", sort);
     
-    // Use cache if available and not expired
-    if (!forceRefresh && cachedFiles && (now - cacheTimestamp) < CACHE_DURATION) {
-      const total = cachedFiles.length;
-      const pageCount = Math.ceil(total / pageSize);
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedFiles = cachedFiles.slice(startIndex, endIndex);
-      
-      return {
-        data: paginatedFiles,
-        meta: {
-          pagination: {
-            page,
-            pageSize,
-            pageCount,
-            total,
-          }
+    // Add pagination params (Strapi 5 format)
+    queryParams.append("pagination[page]", String(page));
+    queryParams.append("pagination[pageSize]", String(pageSize));
+
+    // Add filters if provided
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(`filters[${key}]`, String(value));
         }
-      };
+      });
     }
 
-    // Fetch from API if cache is empty, expired, or force refresh
     const response = await apiClient.get<UploadedFile[]>(
-      `/api/upload/files?sort=${sort}`
+      `/api/upload/files?${queryParams.toString()}`
     );
+
+    const files = response.data || [];
     
-    const allFiles = response.data || [];
-    
-    // Update cache
-    cachedFiles = allFiles;
-    cacheTimestamp = now;
-    
-    const total = allFiles.length;
-    const pageCount = Math.ceil(total / pageSize);
-    
-    // Client-side pagination: slice the results
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedFiles = allFiles.slice(startIndex, endIndex);
-    
+    // Get pagination info from response headers or fallback
+    const totalCount = parseInt(response.headers["x-total-count"] || "0", 10);
+    const totalPages = Math.ceil(totalCount / pageSize) || 1;
+
     return {
-      data: paginatedFiles,
+      data: files,
       meta: {
         pagination: {
           page,
           pageSize,
-          pageCount,
-          total,
-        }
-      }
+          pageCount: totalPages,
+          total: totalCount || files.length,
+        },
+      },
     };
   },
 
@@ -170,6 +154,33 @@ const uploadApi = {
    */
   getFileById: (id: number) => {
     return apiClient.get<UploadedFile>(`/api/upload/files/${id}`);
+  },
+
+  /**
+   * Delete a file by ID
+   * @param id - File ID
+   * @returns Promise with the deletion response
+   */
+  deleteFile: (id: number) => {
+    return apiClient.delete(`/api/upload/files/${id}`);
+  },
+
+  /**
+   * Get total file count (useful for showing total in UI)
+   * @returns Promise with the total count
+   */
+  getFileCount: async (): Promise<number> => {
+    try {
+      // Fetch with pageSize=1 to get total count efficiently
+      const response = await apiClient.get<UploadedFile[]>(
+        "/api/upload/files?pagination[page]=1&pagination[pageSize]=1"
+      );
+      const totalCount = parseInt(response.headers["x-total-count"] || "0", 10);
+      return totalCount;
+    } catch (error) {
+      console.error("[UploadApi] Failed to get file count:", error);
+      return 0;
+    }
   },
 };
 

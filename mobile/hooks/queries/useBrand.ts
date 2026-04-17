@@ -4,9 +4,14 @@ import apiClient from "@/apis/apiClient";
 import { apiRoutes } from "@/apis/apiRoutes";
 import { getQueryString } from "@/helpers/queryParams";
 import { ApiResponseInterface, BrandInterface, CategoryInterface, ProductInterface } from "@/interface";
+import { QUERY_CONFIG } from "@/config/queryConfig";
 
 const populate = ["logo"];
 
+/**
+ * Hook to fetch all brands
+ * Uses static config - brands rarely change
+ */
 export const useBrand = () => {
   return useQuery<BrandInterface[]>({
     queryKey: ["brands"],
@@ -17,12 +22,14 @@ export const useBrand = () => {
       const response = await apiClient.get<ApiResponseInterface<BrandInterface[]>>(url);
       return response.data.data;
     },
-    initialData: [],
-    staleTime: 0,
+    ...QUERY_CONFIG.static,
   });
 };
 
-// Hook to fetch a single brand by documentId
+/**
+ * Hook to fetch a single brand by documentId
+ * Uses detail config - single item view
+ */
 export const useBrandByDocumentId = (documentId: string) => {
   return useQuery<BrandInterface | null>({
     queryKey: ["brand", documentId],
@@ -34,11 +41,14 @@ export const useBrandByDocumentId = (documentId: string) => {
       return response.data.data;
     },
     enabled: !!documentId,
-    staleTime: 0,
+    ...QUERY_CONFIG.detail,
   });
 };
 
-// Hook to fetch categories that have products for a specific brand
+/**
+ * Hook to fetch categories that have products for a specific brand
+ * Uses semiStatic config - derived from products
+ */
 export const useBrandCategories = (brandDocumentId: string) => {
   return useQuery<CategoryInterface[]>({
     queryKey: ["brandCategories", brandDocumentId],
@@ -67,11 +77,14 @@ export const useBrandCategories = (brandDocumentId: string) => {
       return Array.from(categoryMap.values());
     },
     enabled: !!brandDocumentId,
-    staleTime: 0,
+    ...QUERY_CONFIG.semiStatic,
   });
 };
 
-// Hook to fetch products for a specific brand and category (lazy loaded)
+/**
+ * Hook to fetch products for a specific brand and category (lazy loaded)
+ * Uses semiStatic config - products
+ */
 export const useBrandCategoryProducts = (brandDocumentId: string, categoryDocumentId: string, enabled: boolean = false) => {
   return useQuery<ProductInterface[]>({
     queryKey: ["brandCategoryProducts", brandDocumentId, categoryDocumentId],
@@ -90,11 +103,14 @@ export const useBrandCategoryProducts = (brandDocumentId: string, categoryDocume
       return response.data.data;
     },
     enabled: enabled && !!brandDocumentId && !!categoryDocumentId,
-    staleTime: 0,
+    ...QUERY_CONFIG.semiStatic,
   });
 };
 
-// Hook to fetch featured products for a brand (for gallery/carousel)
+/**
+ * Hook to fetch featured products for a brand (for gallery/carousel)
+ * Uses semiStatic config - products
+ */
 export const useBrandFeaturedProducts = (brandDocumentId: string) => {
   return useQuery<ProductInterface[]>({
     queryKey: ["brandFeaturedProducts", brandDocumentId],
@@ -112,11 +128,14 @@ export const useBrandFeaturedProducts = (brandDocumentId: string) => {
       return response.data.data;
     },
     enabled: !!brandDocumentId,
-    staleTime: 0,
+    ...QUERY_CONFIG.semiStatic,
   });
 };
 
-// Hook to search brands by name
+/**
+ * Hook to search brands by name
+ * Uses search config - short-lived, user expects fresh results
+ */
 export const useSearchBrands = (query: string, enabled: boolean = true) => {
   return useQuery<BrandInterface[]>({
     queryKey: ["searchBrands", query],
@@ -134,6 +153,6 @@ export const useSearchBrands = (query: string, enabled: boolean = true) => {
       return response.data.data;
     },
     enabled: enabled && query.length >= 2,
-    staleTime: 0,
+    ...QUERY_CONFIG.search,
   });
 };

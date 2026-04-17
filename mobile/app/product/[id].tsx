@@ -1,19 +1,19 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, View, Alert } from "react-native";
 import { Button, Chip, Divider, IconButton, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedView } from "@/components/ThemedView";
-
 import { Colors } from "@/constants/Colors";
-import { useProductByDocumentId, useIsInWishlist, useToggleWishlist } from "@/hooks/queries";
+import { useProductByDocumentId, useIsInWishlist, useToggleWishlist, useIsInCart } from "@/hooks/queries";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { getImageUrl } from "@/helpers/image";
 import { shareProduct } from "@/helpers/share";
+import AddToCartModal from "@/components/ui/AddToCartModal";
+import CartIcon from "@/components/ui/CartIcon";
 
 const { width } = Dimensions.get("window");
 
@@ -22,9 +22,10 @@ export default function ProductScreen() {
 
   const { data: product, isLoading } = useProductByDocumentId(id || "");
 
-  const [quantity, setQuantity] = useState(1);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showCartModal, setShowCartModal] = useState(false);
+  
   const colorScheme =
     useThemeColor({}, "background") === Colors.light.background
       ? "light"
@@ -35,37 +36,42 @@ export default function ProductScreen() {
   const isInWishlist = useIsInWishlist(id || "");
   const toggleWishlist = useToggleWishlist();
 
+  // Cart hooks
+  const { isInCart, quantity: cartQuantity } = useIsInCart(id || "");
+
   // Use fields returned from Strapi
   const brandName = product?.brand?.name;
   const categoryName = product?.category?.name;
   const productImages = product?.images || [];
   const attributes = product?.attributeValues || product?.productAttributes || [];
   const stockValue = product?.stockQuantity ?? product?.stock ?? 0;
-  const isLowStock =
-    !!product && stockValue <= (product.lowStockThreshold || 0);
+  const isLowStock = stockValue > 0 && stockValue <= 5;
   const isFeatured = !!product && !!product.isFeatured;
 
   const handleGoBack = () => {
     router.back();
   };
 
-  const incrementQuantity = () => {
-    setQuantity((prev) => prev + 1);
-  };
-
-  const decrementQuantity = () => {
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
-  };
-
   const handleAddToCart = () => {
-    console.log("Add to cart:", { productId: id, quantity });
-    // Implement add to cart logic
+    if (stockValue <= 0) {
+      Alert.alert("Out of Stock", "This product is currently unavailable.");
+      return;
+    }
+    setShowCartModal(true);
   };
 
   const handleToggleWishlist = () => {
     if (id) {
       toggleWishlist.mutate(id);
     }
+  };
+
+  const handleViewCart = () => {
+    router.push("/cart");
+  };
+
+  const handleCartPress = () => {
+    router.push("/cart");
   };
 
   if (isLoading || !product) {
@@ -109,6 +115,7 @@ export default function ProductScreen() {
               size={24}
               onPress={handleToggleWishlist}
             />
+            <CartIcon onPress={handleCartPress} color="#333" size={22} />
           </View>
         </View>
 
@@ -131,7 +138,7 @@ export default function ProductScreen() {
                 {productImages.map((img, index) => (
                   <Image
                     key={img.id || index}
-                    source={{ uri: getImageUrl(img.url) }}
+                    source={{ uri: getImageUrl(img.url) || undefined }}
                     style={styles.carouselImage}
                     contentFit="contain"
                   />
@@ -166,6 +173,11 @@ export default function ProductScreen() {
                   {brandName}
                 </Chip>
               )}
+              {isFeatured && (
+                <Chip style={styles.featuredChip} mode="flat">
+                  Featured
+                </Chip>
+              )}
             </View>
 
             <Text variant="bodyMedium" style={styles.productName}>
@@ -176,53 +188,58 @@ export default function ProductScreen() {
               {hasCompare ? (
                 <>
                   <Text variant="headlineMedium" style={styles.discountPrice}>
-                    ₹{product.price.toFixed(2)}
+                    ₹{product.price.toFixed(0)}
                   </Text>
                   <Text variant="titleMedium" style={styles.originalPrice}>
-                    ₹{product.comparePrice?.toFixed(2)}
+                    ₹{product.comparePrice?.toFixed(0)}
                   </Text>
+                  <View style={styles.discountBadge}>
+                    <Text style={styles.discountText}>
+                      {Math.round(((product.comparePrice! - product.price) / product.comparePrice!) * 100)}% OFF
+                    </Text>
+                  </View>
                 </>
               ) : (
                 <Text variant="headlineMedium" style={styles.price}>
-                  ₹{product.price.toFixed(2)}
+                  ₹{product.price.toFixed(0)}
                 </Text>
               )}
               <View style={{ flex: 1 }} />
               <Chip
-                style={styles.stockChip}
+                style={[styles.stockChip, stockValue <= 0 && styles.outOfStockChip]}
                 icon={stockValue > 0 ? "check" : "alert-circle"}
               >
                 {stockValue > 0 ? `In stock` : "Out of stock"}
               </Chip>
             </View>
 
+            {isLowStock && (
+              <Text style={styles.lowStockWarning}>
+                Only {stockValue} left in stock - order soon!
+              </Text>
+            )}
+
+            {isInCart && (
+              <View style={styles.inCartBanner}>
+                <Text style={styles.inCartText}>
+                  {cartQuantity} already in your cart
+                </Text>
+                <Button
+                  mode="text"
+                  compact
+                  onPress={handleViewCart}
+                  textColor={primaryColor}
+                >
+                  View Cart
+                </Button>
+              </View>
+            )}
+
             {categoryName && (
               <Text variant="bodyMedium" style={styles.categoryText}>
                 Category: {categoryName}
               </Text>
             )}
-
-            <View style={styles.quantityContainer}>
-              <Text variant="titleMedium">Quantity:</Text>
-              <View style={styles.quantitySelector}>
-                <IconButton
-                  icon="minus"
-                  size={20}
-                  mode="contained"
-                  onPress={decrementQuantity}
-                  disabled={quantity <= 1}
-                />
-                <Text variant="titleMedium" style={styles.quantityText}>
-                  {quantity}
-                </Text>
-                <IconButton
-                  icon="plus"
-                  size={20}
-                  mode="contained"
-                  onPress={incrementQuantity}
-                />
-              </View>
-            </View>
 
             <Divider style={styles.divider} />
 
@@ -234,14 +251,16 @@ export default function ProductScreen() {
               style={styles.description}
               numberOfLines={showFullDescription ? undefined : 4}
             >
-              {product.description}
+              {product.description || "No description available."}
             </Text>
-            <Button
-              mode="text"
-              onPress={() => setShowFullDescription((s) => !s)}
-            >
-              {showFullDescription ? "Show less" : "Read more"}
-            </Button>
+            {product.description && product.description.length > 100 && (
+              <Button
+                mode="text"
+                onPress={() => setShowFullDescription((s) => !s)}
+              >
+                {showFullDescription ? "Show less" : "Read more"}
+              </Button>
+            )}
 
             {!!attributes.length && (
               <>
@@ -249,14 +268,19 @@ export default function ProductScreen() {
                   Specifications
                 </Text>
                 <View style={styles.attributesList}>
-                  {attributes.map((attr) => (
-                    <View key={attr.id} style={styles.attributeRow}>
-                      <Text style={styles.attributeName}>
-                        {attr.attribute?.name || "Attribute"}
-                      </Text>
-                      <Text style={styles.attributeValue}>{attr.value}</Text>
-                    </View>
-                  ))}
+                  {attributes.map((attr) => {
+                    const attrName = 'name' in attr.attribute 
+                      ? attr.attribute.name 
+                      : attr.attribute.data?.name || "Attribute";
+                    return (
+                      <View key={attr.id} style={styles.attributeRow}>
+                        <Text style={styles.attributeName}>
+                          {attrName}
+                        </Text>
+                        <Text style={styles.attributeValue}>{attr.value}</Text>
+                      </View>
+                    );
+                  })}
                 </View>
               </>
             )}
@@ -264,37 +288,27 @@ export default function ProductScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <View style={styles.footerContent}>
-            <View style={styles.quantitySelectorFooter}>
-              <IconButton
-                icon="minus"
-                size={20}
-                mode="contained"
-                onPress={decrementQuantity}
-                disabled={quantity <= 1}
-              />
-              <Text variant="titleMedium" style={styles.quantityText}>
-                {quantity}
-              </Text>
-              <IconButton
-                icon="plus"
-                size={20}
-                mode="contained"
-                onPress={incrementQuantity}
-              />
-            </View>
-            <Button
-              mode="contained"
-              buttonColor={primaryColor}
-              style={styles.addToCartButton}
-              onPress={handleAddToCart}
-              disabled={stockValue <= 0}
-            >
-              Add to Cart
-            </Button>
-          </View>
+          <Button
+            mode="contained"
+            buttonColor={primaryColor}
+            style={styles.addToCartButton}
+            onPress={handleAddToCart}
+            disabled={stockValue <= 0}
+          >
+            {stockValue <= 0 ? "Out of Stock" : isInCart ? "Add More to Cart" : "Add to Cart"}
+          </Button>
         </View>
       </SafeAreaView>
+
+      {/* Add to Cart Modal */}
+      <AddToCartModal
+        visible={showCartModal}
+        product={product}
+        onClose={() => setShowCartModal(false)}
+        onSuccess={() => {
+          // Optional: Show success message or navigate
+        }}
+      />
     </ThemedView>
   );
 }
@@ -333,178 +347,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  quickRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    backgroundColor: "#fff",
-  },
-  quickPriceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  quickPrice: {
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  quickCompare: {
-    fontSize: 13,
-    color: "#999",
-    textDecorationLine: "line-through",
-    marginLeft: 8,
-  },
-  quickDiscountBadge: {
-    marginLeft: 8,
-    backgroundColor: "#E53935",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  quickDiscountText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  quickRating: {
-    fontSize: 14,
-    color: "#333",
-    marginLeft: 8,
-  },
-  featuredSmall: {
-    marginLeft: 8,
-    backgroundColor: "#FFD700",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  featuredSmallText: {
-    color: "#000",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  lowStockSmall: {
-    marginLeft: 8,
-    backgroundColor: "#FFA500",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  lowStockSmallText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  carouselIndicator: {
-    position: "absolute",
-    bottom: 12,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(0,0,0,0.2)",
-    marginHorizontal: 4,
-  },
-  activeDot: {
-    backgroundColor: "rgba(0,0,0,0.8)",
-    width: 10,
-    height: 10,
-  },
   scrollContent: {
     paddingBottom: 24,
-  },
-  imageContainer: {
-    width: width,
-    height: width * 0.8,
-    backgroundColor: "#f5f5f5",
-  },
-  productImage: {
-    width: "100%",
-    height: "100%",
-  },
-  detailsContainer: {
-    padding: 16,
-  },
-  brandChip: {
-    alignSelf: "flex-start",
-    marginBottom: 8,
-  },
-  productName: {
-    marginBottom: 8,
-  },
-  priceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  price: {
-    fontWeight: "bold",
-  },
-  discountPrice: {
-    fontWeight: "bold",
-    color: "#E53935",
-  },
-  originalPrice: {
-    textDecorationLine: "line-through",
-    color: "#999",
-    marginLeft: 8,
-  },
-  discount: {
-    marginLeft: 8,
-    backgroundColor: "#E53935",
-    color: "white",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  categoryText: {
-    marginBottom: 16,
-  },
-  quantityContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  quantitySelector: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  quantityText: {
-    marginHorizontal: 16,
-    minWidth: 24,
-    textAlign: "center",
-  },
-  divider: {
-    marginVertical: 16,
-  },
-  sectionTitle: {
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  description: {
-    lineHeight: 22,
-  },
-  stockInfo: {
-    marginTop: 16,
-  },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-  },
-  addToCartButton: {
-    borderRadius: 8,
   },
   carouselContainer: {
     width: width,
@@ -550,14 +394,95 @@ const styles = StyleSheet.create({
     width: 20,
     borderRadius: 4,
   },
+  detailsContainer: {
+    padding: 16,
+  },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
     marginBottom: 8,
+    gap: 8,
+  },
+  brandChip: {
+    alignSelf: "flex-start",
+  },
+  featuredChip: {
+    backgroundColor: "#FFD700",
+  },
+  productName: {
+    marginBottom: 8,
+    fontWeight: "600",
+    fontSize: 18,
+  },
+  priceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  price: {
+    fontWeight: "bold",
+  },
+  discountPrice: {
+    fontWeight: "bold",
+    color: "#E53935",
+  },
+  originalPrice: {
+    textDecorationLine: "line-through",
+    color: "#999",
+    marginLeft: 8,
+  },
+  discountBadge: {
+    marginLeft: 8,
+    backgroundColor: "#E53935",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  discountText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
   },
   stockChip: {
-    alignSelf: "flex-end",
+    backgroundColor: "#E8F5E9",
+  },
+  outOfStockChip: {
+    backgroundColor: "#FFEBEE",
+  },
+  lowStockWarning: {
+    color: "#FF9500",
+    fontSize: 13,
+    marginBottom: 8,
+    fontWeight: "500",
+  },
+  inCartBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#E3F2FD",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  inCartText: {
+    color: "#1976D2",
+    fontWeight: "500",
+  },
+  categoryText: {
+    marginBottom: 16,
+    color: "#666",
+  },
+  divider: {
+    marginVertical: 16,
+  },
+  sectionTitle: {
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  description: {
+    lineHeight: 22,
+    color: "#333",
   },
   attributesList: {
     marginTop: 8,
@@ -579,14 +504,14 @@ const styles = StyleSheet.create({
     color: "#111",
     fontWeight: "600",
   },
-  footerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    backgroundColor: "#fff",
   },
-  quantitySelectorFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 12,
+  addToCartButton: {
+    borderRadius: 12,
+    paddingVertical: 6,
   },
 });

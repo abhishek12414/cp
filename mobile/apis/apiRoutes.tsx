@@ -33,9 +33,10 @@ export const apiRoutes = {
 
   // Cart
   CART: `${apiV1}/carts/me`,
-  ADD_TO_CART: `${apiV1}/carts/add`,
-  CART_ITEM: `${apiV1}/carts/update`,
-  REMOVE_FROM_CART: `${apiV1}/carts/remove`,
+  CART_ADD: `${apiV1}/carts/add`,
+  CART_ITEM: (id: string) => `${apiV1}/carts/items/${id}`,
+  CART_CLEAR: `${apiV1}/carts/clear`,
+  CART_COUNT: `${apiV1}/carts/count`,
 
   // Wishlist
   WISHLISTS: `${apiV1}/wishlists`,
