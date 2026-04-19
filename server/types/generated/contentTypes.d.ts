@@ -729,6 +729,74 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiFeeConfigFeeConfig extends Struct.CollectionTypeSchema {
+  collectionName: 'fee_configs';
+  info: {
+    description: 'Configurable additional fees (platform, delivery, packaging etc) added during checkout';
+    displayName: 'Fee Config';
+    pluralName: 'fee-configs';
+    singularName: 'fee-config';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    deliveryFee: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<50>;
+    deliveryTimeMaxDays: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<5>;
+    deliveryTimeMinDays: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<3>;
+    freeDeliveryThreshold: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<1000>;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::fee-config.fee-config'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Default Fees'>;
+    packagingFee: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<20>;
+    platformFee: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiOrderItemOrderItem extends Struct.CollectionTypeSchema {
   collectionName: 'order_items';
   info: {
@@ -778,7 +846,7 @@ export interface ApiOrderItemOrderItem extends Struct.CollectionTypeSchema {
 export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
   collectionName: 'orders';
   info: {
-    description: 'Order details capturing products (via OrderItems), quantities, total price, status. Links to Product/Brand for fulfillment.';
+    description: 'Order details with COD payment, fee breakdown (platform/delivery/packaging), stock reduction on successful checkout.';
     displayName: 'Order';
     pluralName: 'orders';
     singularName: 'order';
@@ -790,6 +858,8 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    deliveryFee: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    expectedDeliveryDate: Schema.Attribute.Date;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::order.order'> &
       Schema.Attribute.Private;
@@ -799,6 +869,11 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
       'api::order-item.order-item'
     >;
     orderNumber: Schema.Attribute.UID & Schema.Attribute.Required;
+    packagingFee: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    paymentMethod: Schema.Attribute.Enumeration<['cod']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'cod'>;
+    platformFee: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
     publishedAt: Schema.Attribute.DateTime;
     shippingAddress: Schema.Attribute.Text;
     status: Schema.Attribute.Enumeration<
@@ -806,6 +881,7 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'pending'>;
+    subtotal: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
     totalPrice: Schema.Attribute.Decimal &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
@@ -1593,6 +1669,7 @@ declare module '@strapi/strapi' {
       'api::cart-item.cart-item': ApiCartItemCartItem;
       'api::cart.cart': ApiCartCart;
       'api::category.category': ApiCategoryCategory;
+      'api::fee-config.fee-config': ApiFeeConfigFeeConfig;
       'api::order-item.order-item': ApiOrderItemOrderItem;
       'api::order.order': ApiOrderOrder;
       'api::product-attribute-value.product-attribute-value': ApiProductAttributeValueProductAttributeValue;

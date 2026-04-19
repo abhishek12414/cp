@@ -103,8 +103,8 @@ export default function AccountScreen() {
               <Text variant="bodySmall" style={styles.statLabel}>Wishlist</Text>
             </TouchableOpacity>
             <View style={styles.statDivider} />
-            <TouchableOpacity style={styles.statItem} onPress={() => console.log("Orders")}>
-              <Text variant="titleMedium" style={[styles.statNumber, { color: primaryColor }]}>0</Text>
+            <TouchableOpacity style={styles.statItem} onPress={() => router.push("/orders")}>
+              <Text variant="titleMedium" style={[styles.statNumber, { color: primaryColor }]}>{/* Dynamic count can be added later */}0</Text>
               <Text variant="bodySmall" style={styles.statLabel}>Orders</Text>
             </TouchableOpacity>
             <View style={styles.statDivider} />
@@ -130,7 +130,7 @@ export default function AccountScreen() {
                 icon="package-variant-closed"
                 label="My Orders"
                 subtitle="Track & manage orders"
-                onPress={() => console.log("Orders")}
+                onPress={() => router.push("/orders")}
               />
               <Divider />
               <MenuItem

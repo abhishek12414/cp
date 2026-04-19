@@ -24,6 +24,7 @@ async function enablePublicPermissions(strapi: Core.Strapi): Promise<void> {
       'category',
       'order',
       'order-item',
+      'fee-config',
       'product',
       'product-attribute-value',
     ];

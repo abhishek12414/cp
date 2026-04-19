@@ -48,7 +48,11 @@ export const apiRoutes = {
   ORDERS: `${apiV1}/orders`,
   ORDER: (id: string) => `${apiV1}/orders/${id}`,
   CREATE_ORDER: `${apiV1}/orders`,
+  ORDER_CHECKOUT: `${apiV1}/orders/checkout`,
   UPLOAD_PURCHASE_ORDER: `${apiV1}/orders/upload`,
+
+  // Fee Config
+  FEE_CONFIG: `${apiV1}/fee-configs/active`,
 
   // Addresses
   ADDRESSES: `${apiV1}/addresses`,

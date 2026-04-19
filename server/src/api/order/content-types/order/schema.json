@@ -5,7 +5,7 @@
     "singularName": "order",
     "pluralName": "orders",
     "displayName": "Order",
-    "description": "Order details capturing products (via OrderItems), quantities, total price, status. Links to Product/Brand for fulfillment."
+    "description": "Order details with COD payment, fee breakdown (platform/delivery/packaging), stock reduction on successful checkout."
   },
   "options": {
     "draftAndPublish": false
@@ -44,6 +44,31 @@
     },
     "notes": {
       "type": "text"
+    },
+    "paymentMethod": {
+      "type": "enumeration",
+      "enum": ["cod"],
+      "default": "cod",
+      "required": true
+    },
+    "subtotal": {
+      "type": "decimal",
+      "default": 0
+    },
+    "deliveryFee": {
+      "type": "decimal",
+      "default": 0
+    },
+    "platformFee": {
+      "type": "decimal",
+      "default": 0
+    },
+    "packagingFee": {
+      "type": "decimal",
+      "default": 0
+    },
+    "expectedDeliveryDate": {
+      "type": "date"
     }
   }
 }

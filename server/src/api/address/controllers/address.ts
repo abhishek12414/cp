@@ -11,27 +11,31 @@ async function unsetPrimaryAddresses(strapi: any, userId: number) {
   });
   
   for (const addr of primaryAddresses) {
-    await strapi.entityService.update('api::address.address', addr.documentId || addr.id, {
+    const docId = addr.documentId || addr.id;
+    await strapi.entityService.update('api::address.address', docId, {
       data: { isPrimary: false },
     });
   }
 }
 
-// Helper to find address by documentId or numeric id
-async function findAddressById(strapi: any, id: string) {
-  // Try documentId first (string format)
+// Helper to find address by documentId or numeric id (always returns documentId-ready object)
+async function findAddressById(strapi: any, id: string | number) {
+  const idStr = String(id);
+
+  // Try by documentId (preferred in Strapi v5)
   let address = await strapi.db.query('api::address.address').findOne({
-    where: { documentId: id },
+    where: { documentId: idStr },
     populate: ['user'],
   });
-  
-  // If not found, try numeric id
-  if (!address) {
-    address = await strapi.entityService.findOne('api::address.address', id, {
+
+  // Fallback: try by numeric id
+  if (!address && /^\d+$/.test(idStr)) {
+    address = await strapi.db.query('api::address.address').findOne({
+      where: { id: parseInt(idStr, 10) },
       populate: ['user'],
     });
   }
-  
+
   return address;
 }
 
@@ -134,7 +138,8 @@ export default factories.createCoreController('api::address.address', ({ strapi 
         filters: { user: user.id, isPrimary: true },
       });
       if (existing.length === 0) {
-        await strapi.entityService.update('api::address.address', address.documentId || address.id, {
+        const docId = address.documentId || address.id;
+        await strapi.entityService.update('api::address.address', docId, {
           data: { isPrimary: true },
         });
         address.isPrimary = true;
@@ -144,9 +149,63 @@ export default factories.createCoreController('api::address.address', ({ strapi 
     return { data: transformAddress(address) };
   },
 
-  // Note: update and delete use Strapi's default core controller methods
-  // The user relation on address handles ownership at data level
-  // Frontend should only send requests for user's own addresses (based on list from find)
+  // Update address (must own it)
+  async update(ctx) {
+    const user = ctx.state.user;
+
+    if (!user) {
+      return ctx.unauthorized('You must be logged in to update this address');
+    }
+
+    const { id } = ctx.params;
+    const data = ctx.request.body.data || ctx.request.body;
+
+    const existing = await findAddressById(strapi, id);
+
+    if (!existing) {
+      return ctx.notFound('Address not found');
+    }
+
+    if (existing.user?.id !== user.id) {
+      return ctx.forbidden('You can only update your own addresses');
+    }
+
+    // If setting as primary, unset others first
+    if (data.isPrimary) {
+      await unsetPrimaryAddresses(strapi, user.id);
+    }
+
+    const updated = await strapi.entityService.update('api::address.address', existing.documentId, {
+      data,
+    });
+
+    return { data: transformAddress(updated) };
+  },
+
+  // Delete address (must own it)
+  async delete(ctx) {
+    const user = ctx.state.user;
+
+    if (!user) {
+      return ctx.unauthorized('You must be logged in to delete this address');
+    }
+
+    const { id } = ctx.params;
+
+    const existing = await findAddressById(strapi, id);
+
+    if (!existing) {
+      return ctx.notFound('Address not found');
+    }
+
+    if (existing.user?.id !== user.id) {
+      return ctx.forbidden('You can only delete your own addresses');
+    }
+
+    await strapi.entityService.delete('api::address.address', existing.documentId);
+
+    return { data: { deleted: true } };
+  },
 
   // Set address as primary
   async setPrimary(ctx) {
@@ -171,7 +230,7 @@ export default factories.createCoreController('api::address.address', ({ strapi 
     await unsetPrimaryAddresses(strapi, user.id);
 
     // Set this one as primary
-    const address = await strapi.entityService.update('api::address.address', existing.documentId || existing.id, {
+    const address = await strapi.entityService.update('api::address.address', existing.documentId, {
       data: { isPrimary: true },
     });
 

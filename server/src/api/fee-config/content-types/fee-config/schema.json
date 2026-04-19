@@ -1,0 +1,57 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fee_configs",
+  "info": {
+    "singularName": "fee-config",
+    "pluralName": "fee-configs",
+    "displayName": "Fee Config",
+    "description": "Configurable additional fees (platform, delivery, packaging etc) added during checkout"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "default": "Default Fees"
+    },
+    "platformFee": {
+      "type": "decimal",
+      "default": 0,
+      "min": 0,
+      "description": "Platform/service fee added to every order"
+    },
+    "deliveryFee": {
+      "type": "decimal",
+      "default": 50,
+      "min": 0,
+      "description": "Standard delivery fee"
+    },
+    "packagingFee": {
+      "type": "decimal",
+      "default": 20,
+      "min": 0,
+      "description": "Packaging and handling fee"
+    },
+    "freeDeliveryThreshold": {
+      "type": "decimal",
+      "default": 1000,
+      "min": 0,
+      "description": "Orders above this amount get free delivery"
+    },
+    "deliveryTimeMinDays": {
+      "type": "integer",
+      "default": 3
+    },
+    "deliveryTimeMaxDays": {
+      "type": "integer",
+      "default": 5
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}
