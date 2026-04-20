@@ -120,19 +120,31 @@ export default function AdminUploadOrdersScreen() {
             <Text variant="titleLarge" style={[styles.statNumber, { color: statusColors.pending }]}>
               {pendingCount}
             </Text>
-            <Text variant="bodySmall" style={styles.statLabel}>Pending</Text>
+            <Text variant="bodySmall" style={styles.statLabel}>
+              Pending
+            </Text>
           </Surface>
           <Surface style={styles.statCard}>
-            <Text variant="titleLarge" style={[styles.statNumber, { color: statusColors.processing }]}>
+            <Text
+              variant="titleLarge"
+              style={[styles.statNumber, { color: statusColors.processing }]}
+            >
               {uploadOrders.filter((o) => o.status === "processing").length}
             </Text>
-            <Text variant="bodySmall" style={styles.statLabel}>Processing</Text>
+            <Text variant="bodySmall" style={styles.statLabel}>
+              Processing
+            </Text>
           </Surface>
           <Surface style={styles.statCard}>
-            <Text variant="titleLarge" style={[styles.statNumber, { color: statusColors.completed }]}>
+            <Text
+              variant="titleLarge"
+              style={[styles.statNumber, { color: statusColors.completed }]}
+            >
               {uploadOrders.filter((o) => o.status === "completed").length}
             </Text>
-            <Text variant="bodySmall" style={styles.statLabel}>Completed</Text>
+            <Text variant="bodySmall" style={styles.statLabel}>
+              Completed
+            </Text>
           </Surface>
         </View>
 
@@ -187,11 +199,7 @@ export default function AdminUploadOrdersScreen() {
                     </Text>
                     <ScrollView horizontal style={styles.filesScroll}>
                       {selectedOrder.files?.map((file) => (
-                        <TouchableOpacity
-                          key={file.id}
-                          onPress={() => {}}
-                          style={styles.fileThumb}
-                        >
+                        <TouchableOpacity key={file.id} onPress={() => {}} style={styles.fileThumb}>
                           {file.mime?.startsWith("image/") ? (
                             <Image
                               source={{ uri: `${API_URL}${file.url}` }}
@@ -235,12 +243,7 @@ export default function AdminUploadOrdersScreen() {
                           ]}
                           onPress={() => setStatus(s)}
                         >
-                          <Text
-                            style={[
-                              styles.statusBtnText,
-                              status === s && { color: "#fff" },
-                            ]}
-                          >
+                          <Text style={[styles.statusBtnText, status === s && { color: "#fff" }]}>
                             {statusLabels[s]}
                           </Text>
                         </TouchableOpacity>

@@ -26,12 +26,8 @@ import authApi from "@/apis/auth.api";
 
 // Validation schema
 const SignupSchema = Yup.object().shape({
-  name: Yup.string()
-    .min(2, "Name must be at least 2 characters")
-    .required("Name is required"),
-  email: Yup.string()
-    .email("Please enter a valid email")
-    .required("Email is required"),
+  name: Yup.string().min(2, "Name must be at least 2 characters").required("Name is required"),
+  email: Yup.string().email("Please enter a valid email").required("Email is required"),
   phone: Yup.string()
     .matches(/^[0-9]{10}$/, "Phone number must be 10 digits")
     .required("Phone number is required"),
@@ -53,9 +49,7 @@ interface SignupFormValues {
 
 export default function SignupScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state: any) => state.auth);
@@ -112,9 +106,7 @@ export default function SignupScreen() {
               <Text style={styles.successIcon}>✉️</Text>
             </View>
             <Text style={styles.successTitle}>Verify Your Email</Text>
-            <Text style={styles.successMessage}>
-              We&apos;ve sent a verification link to:
-            </Text>
+            <Text style={styles.successMessage}>We&apos;ve sent a verification link to:</Text>
             <Text style={styles.emailText}>{signupEmail}</Text>
             <Text style={styles.successHint}>
               Please check your inbox and click the verification link to activate your account.
@@ -158,51 +150,31 @@ export default function SignupScreen() {
             keyboardShouldPersistTaps="handled"
           >
             {/* Back Button */}
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
               <Text style={styles.backText}>← Back</Text>
             </TouchableOpacity>
 
             <View style={styles.logoContainer}>
-              <Image
-                source={require("../assets/images/react-logo.png")}
-                style={styles.logo}
-              />
-              <Text style={[styles.logoText, { color: primaryColor }]}>
-                CurrentShop
-              </Text>
+              <Image source={require("../assets/images/react-logo.png")} style={styles.logo} />
+              <Text style={[styles.logoText, { color: primaryColor }]}>CurrentShop</Text>
             </View>
 
             <View style={styles.formContainer}>
               <Text style={styles.welcomeText}>Create Account</Text>
-              <Text style={styles.subtitleText}>
-                Sign up to start shopping
-              </Text>
+              <Text style={styles.subtitleText}>Sign up to start shopping</Text>
 
               <Formik
                 initialValues={initialValues}
                 validationSchema={SignupSchema}
                 onSubmit={handleSignup}
               >
-                {({
-                  handleChange,
-                  handleBlur,
-                  handleSubmit,
-                  values,
-                  errors,
-                  touched,
-                }) => (
+                {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
                   <View style={styles.form}>
                     {/* Name Input */}
                     <View style={styles.inputContainer}>
                       <Text style={styles.label}>Full Name</Text>
                       <TextInput
-                        style={[
-                          styles.input,
-                          touched.name && errors.name && styles.inputError,
-                        ]}
+                        style={[styles.input, touched.name && errors.name && styles.inputError]}
                         placeholder="Enter your full name"
                         placeholderTextColor="#999"
                         value={values.name}
@@ -220,10 +192,7 @@ export default function SignupScreen() {
                     <View style={styles.inputContainer}>
                       <Text style={styles.label}>Email</Text>
                       <TextInput
-                        style={[
-                          styles.input,
-                          touched.email && errors.email && styles.inputError,
-                        ]}
+                        style={[styles.input, touched.email && errors.email && styles.inputError]}
                         placeholder="Enter your email"
                         placeholderTextColor="#999"
                         value={values.email}
@@ -243,10 +212,7 @@ export default function SignupScreen() {
                     <View style={styles.inputContainer}>
                       <Text style={styles.label}>Mobile Number</Text>
                       <TextInput
-                        style={[
-                          styles.input,
-                          touched.phone && errors.phone && styles.inputError,
-                        ]}
+                        style={[styles.input, touched.phone && errors.phone && styles.inputError]}
                         placeholder="Enter 10-digit mobile number"
                         placeholderTextColor="#999"
                         value={values.phone}
@@ -283,9 +249,7 @@ export default function SignupScreen() {
                           style={styles.eyeButton}
                           onPress={() => setShowPassword(!showPassword)}
                         >
-                          <Text style={styles.eyeText}>
-                            {showPassword ? "🙈" : "👁️"}
-                          </Text>
+                          <Text style={styles.eyeText}>{showPassword ? "🙈" : "👁️"}</Text>
                         </TouchableOpacity>
                       </View>
                       {touched.password && errors.password && (
@@ -315,9 +279,7 @@ export default function SignupScreen() {
                           style={styles.eyeButton}
                           onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
-                          <Text style={styles.eyeText}>
-                            {showConfirmPassword ? "🙈" : "👁️"}
-                          </Text>
+                          <Text style={styles.eyeText}>{showConfirmPassword ? "🙈" : "👁️"}</Text>
                         </TouchableOpacity>
                       </View>
                       {touched.confirmPassword && errors.confirmPassword && (
@@ -340,11 +302,7 @@ export default function SignupScreen() {
                       style={styles.signupButton}
                       disabled={loading}
                     >
-                      {loading ? (
-                        <ActivityIndicator animating color="#fff" />
-                      ) : (
-                        "Create Account"
-                      )}
+                      {loading ? <ActivityIndicator animating color="#fff" /> : "Create Account"}
                     </Button>
                   </View>
                 )}
@@ -354,9 +312,7 @@ export default function SignupScreen() {
               <View style={styles.signinContainer}>
                 <Text style={styles.signinText}>Already have an account? </Text>
                 <TouchableOpacity onPress={() => router.replace("/login")}>
-                  <Text style={[styles.signinLink, { color: primaryColor }]}>
-                    Sign In
-                  </Text>
+                  <Text style={[styles.signinLink, { color: primaryColor }]}>Sign In</Text>
                 </TouchableOpacity>
               </View>
             </View>

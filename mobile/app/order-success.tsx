@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, ScrollView } from "react-native";
-import { Text, Button, IconButton, Surface } from "react-native-paper";
+import { Text, Button, Surface } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -8,7 +8,8 @@ import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function OrderSuccessScreen() {
-  const colorScheme = useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
+  const colorScheme =
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   const params = useLocalSearchParams<{
@@ -33,7 +34,7 @@ export default function OrderSuccessScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      
+
       <ScrollView contentContainerStyle={styles.content}>
         {/* Success Icon & Message */}
         <View style={styles.successSection}>
@@ -50,13 +51,15 @@ export default function OrderSuccessScreen() {
 
         {/* Order Details Card */}
         <Surface style={styles.orderCard}>
-          <Text variant="titleMedium" style={styles.cardTitle}>Order Confirmation</Text>
-          
+          <Text variant="titleMedium" style={styles.cardTitle}>
+            Order Confirmation
+          </Text>
+
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Order Number</Text>
             <Text style={styles.detailValue}>{orderNumber}</Text>
           </View>
-          
+
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Total Amount</Text>
             <Text style={[styles.detailValue, { color: primaryColor, fontWeight: "700" }]}>
@@ -77,7 +80,9 @@ export default function OrderSuccessScreen() {
 
         {/* Important Notes */}
         <Surface style={styles.noteCard}>
-          <Text variant="titleSmall" style={styles.noteTitle}>What happens next?</Text>
+          <Text variant="titleSmall" style={styles.noteTitle}>
+            What happens next?
+          </Text>
           <Text style={styles.noteText}>
             • You will receive an SMS/Email confirmation shortly.
             {"\n"}• Our team will contact you to confirm the order.
@@ -95,11 +100,7 @@ export default function OrderSuccessScreen() {
           >
             Continue Shopping
           </Button>
-          <Button
-            mode="outlined"
-            style={styles.secondaryButton}
-            onPress={handleViewOrders}
-          >
+          <Button mode="outlined" style={styles.secondaryButton} onPress={handleViewOrders}>
             View My Orders
           </Button>
         </View>

@@ -8,12 +8,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
-import { useProductByDocumentId, useIsInWishlist, useToggleWishlist, useIsInCart } from "@/hooks/queries";
+import {
+  useProductByDocumentId,
+  useIsInWishlist,
+  useToggleWishlist,
+  useIsInCart,
+} from "@/hooks/queries";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { getImageUrl } from "@/helpers/image";
 import { shareProduct } from "@/helpers/share";
 import AddToCartModal from "@/components/ui/AddToCartModal";
-import CartIcon from "@/components/ui/CartIcon";
+import { CartIcon } from "@/components/ui/CartIcon";
 
 const { width } = Dimensions.get("window");
 
@@ -25,11 +30,9 @@ export default function ProductScreen() {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [showCartModal, setShowCartModal] = useState(false);
-  
+
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   // Wishlist hooks
@@ -82,8 +85,7 @@ export default function ProductScreen() {
     );
   }
 
-  const hasCompare =
-    product?.comparePrice !== undefined && product.comparePrice > product.price;
+  const hasCompare = product?.comparePrice !== undefined && product.comparePrice > product.price;
 
   return (
     <ThemedView style={styles.container}>
@@ -92,16 +94,10 @@ export default function ProductScreen() {
         <View style={styles.header}>
           <IconButton icon="arrow-left" size={24} onPress={handleGoBack} />
           <View style={styles.headerTitleContainer}>
-            <Text
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              style={styles.headerTitleText}
-            >
+            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.headerTitleText}>
               {product.name}
             </Text>
-            {brandName ? (
-              <Text style={styles.headerBrandText}>{brandName}</Text>
-            ) : null}
+            {brandName ? <Text style={styles.headerBrandText}>{brandName}</Text> : null}
           </View>
           <View style={styles.headerActions}>
             <IconButton
@@ -155,10 +151,7 @@ export default function ProductScreen() {
                   {productImages.map((_, idx) => (
                     <View
                       key={idx}
-                      style={[
-                        styles.segment,
-                        idx === activeIndex ? styles.activeSegment : null,
-                      ]}
+                      style={[styles.segment, idx === activeIndex ? styles.activeSegment : null]}
                     />
                   ))}
                 </View>
@@ -195,7 +188,10 @@ export default function ProductScreen() {
                   </Text>
                   <View style={styles.discountBadge}>
                     <Text style={styles.discountText}>
-                      {Math.round(((product.comparePrice! - product.price) / product.comparePrice!) * 100)}% OFF
+                      {Math.round(
+                        ((product.comparePrice! - product.price) / product.comparePrice!) * 100
+                      )}
+                      % OFF
                     </Text>
                   </View>
                 </>
@@ -221,15 +217,8 @@ export default function ProductScreen() {
 
             {isInCart && (
               <View style={styles.inCartBanner}>
-                <Text style={styles.inCartText}>
-                  {cartQuantity} already in your cart
-                </Text>
-                <Button
-                  mode="text"
-                  compact
-                  onPress={handleViewCart}
-                  textColor={primaryColor}
-                >
+                <Text style={styles.inCartText}>{cartQuantity} already in your cart</Text>
+                <Button mode="text" compact onPress={handleViewCart} textColor={primaryColor}>
                   View Cart
                 </Button>
               </View>
@@ -254,10 +243,7 @@ export default function ProductScreen() {
               {product.description || "No description available."}
             </Text>
             {product.description && product.description.length > 100 && (
-              <Button
-                mode="text"
-                onPress={() => setShowFullDescription((s) => !s)}
-              >
+              <Button mode="text" onPress={() => setShowFullDescription((s) => !s)}>
                 {showFullDescription ? "Show less" : "Read more"}
               </Button>
             )}
@@ -269,14 +255,13 @@ export default function ProductScreen() {
                 </Text>
                 <View style={styles.attributesList}>
                   {attributes.map((attr) => {
-                    const attrName = 'name' in attr.attribute 
-                      ? attr.attribute.name 
-                      : attr.attribute.data?.name || "Attribute";
+                    const attrName =
+                      "name" in attr.attribute
+                        ? attr.attribute.name
+                        : attr.attribute.data?.name || "Attribute";
                     return (
                       <View key={attr.id} style={styles.attributeRow}>
-                        <Text style={styles.attributeName}>
-                          {attrName}
-                        </Text>
+                        <Text style={styles.attributeName}>{attrName}</Text>
                         <Text style={styles.attributeValue}>{attr.value}</Text>
                       </View>
                     );

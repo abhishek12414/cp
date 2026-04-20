@@ -1,11 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
@@ -16,8 +10,8 @@ import { Formik } from "formik";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
-import FormField from "@/components/FormField";
-import categoryApi, { CategoryInput } from "@/apis/category.api";
+import { FormField } from "@/components/FormField";
+import { categoryApi, CategoryInput } from "@/apis/category.api";
 import { useCategoryByDocumentId } from "@/hooks/queries/useCategories";
 import { extractMediaUrl, extractMediaId } from "@/helpers/image";
 import { generateSlug } from "@/helpers/dataFormatter";
@@ -43,9 +37,7 @@ export default function CategoryFormScreen() {
   const isEdit = id !== "new";
 
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   // State for selected image URI (for preview)
@@ -55,8 +47,9 @@ export default function CategoryFormScreen() {
   const queryClient = useQueryClient();
 
   // Load existing category for edit mode
-  const { data: categoryData, isLoading: isLoadingCategory } =
-    useCategoryByDocumentId(isEdit ? id : "");
+  const { data: categoryData, isLoading: isLoadingCategory } = useCategoryByDocumentId(
+    isEdit ? id : ""
+  );
 
   // Compute initial values for edit mode
   const editInitialValues: CategoryFormValues = useMemo(() => {
@@ -102,18 +95,12 @@ export default function CategoryFormScreen() {
       if (isEdit) {
         queryClient.invalidateQueries({ queryKey: ["category", id] });
       }
-      Alert.alert(
-        "Success",
-        `Category ${isEdit ? "updated" : "created"} successfully.`
-      );
+      Alert.alert("Success", `Category ${isEdit ? "updated" : "created"} successfully.`);
       router.back();
     },
     onError: (err) => {
       console.error("Category save error:", err);
-      Alert.alert(
-        "Error",
-        `Failed to ${isEdit ? "update" : "create"} category. Please try again.`
-      );
+      Alert.alert("Error", `Failed to ${isEdit ? "update" : "create"} category. Please try again.`);
     },
   });
 
@@ -209,11 +196,7 @@ export default function CategoryFormScreen() {
                 />
 
                 {/* Active Switch */}
-                <FormField
-                  name="isActive"
-                  type="switch"
-                  label="Active Category"
-                />
+                <FormField name="isActive" type="switch" label="Active Category" />
 
                 {/* Category Image */}
                 <FormField
@@ -235,9 +218,7 @@ export default function CategoryFormScreen() {
                 {/* Slug Preview */}
                 <Text style={styles.label}>Slug (auto)</Text>
                 <View style={styles.slugBox}>
-                  <Text style={styles.slugText}>
-                    {getSlugPreview(values.name) || "-"}
-                  </Text>
+                  <Text style={styles.slugText}>{getSlugPreview(values.name) || "-"}</Text>
                 </View>
                 <Text style={styles.note}>
                   Slug is generated from the name using lowercase and hyphens.
@@ -359,4 +340,3 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 });
-

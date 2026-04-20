@@ -37,10 +37,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Image
-            source={{ uri: item.image }}
-            style={[styles.image, { height }]}
-          />
+          <Image source={{ uri: item.image }} style={[styles.image, { height }]} />
         )}
         onMomentumScrollEnd={(e) => {
           const i = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -49,10 +46,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
       />
       <View style={styles.dots}>
         {banners.map((b, i) => (
-          <View
-            key={b.id}
-            style={[styles.dot, i === index && styles.dotActive]}
-          />
+          <View key={b.id} style={[styles.dot, i === index && styles.dotActive]} />
         ))}
       </View>
     </View>

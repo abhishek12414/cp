@@ -1,17 +1,16 @@
-import React from "react";
-import { StyleSheet, View, ScrollView, TouchableOpacity } from "react-native";
-import { Text, Avatar, Divider, IconButton } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Avatar, Divider, IconButton, Text } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 
 import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
-import { logout } from "@/reducers/auth.reducer";
 import { useWishlist } from "@/hooks/queries";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { logout } from "@/reducers/auth.reducer";
 
 interface MenuItemProps {
   icon: string;
@@ -26,8 +25,14 @@ const MenuItem = ({ icon, label, subtitle, badge, onPress }: MenuItemProps) => (
     <View style={styles.menuItemLeft}>
       <IconButton icon={icon} size={24} iconColor="#666" style={styles.menuIcon} />
       <View style={styles.menuItemText}>
-        <Text variant="bodyLarge" style={styles.menuLabel}>{label}</Text>
-        {subtitle && <Text variant="bodySmall" style={styles.menuSubtitle}>{subtitle}</Text>}
+        <Text variant="bodyLarge" style={styles.menuLabel}>
+          {label}
+        </Text>
+        {subtitle && (
+          <Text variant="bodySmall" style={styles.menuSubtitle}>
+            {subtitle}
+          </Text>
+        )}
       </View>
     </View>
     <View style={styles.menuItemRight}>
@@ -43,9 +48,7 @@ const MenuItem = ({ icon, label, subtitle, badge, onPress }: MenuItemProps) => (
 
 export default function AccountScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const isDark = colorScheme === "dark";
   const dispatch = useDispatch();
@@ -53,9 +56,7 @@ export default function AccountScreen() {
   const { data: wishlistItems = [] } = useWishlist();
 
   const displayName =
-    user?.name ||
-    user?.username ||
-    (user?.email ? user.email.split("@")[0] : "User");
+    user?.name || user?.username || (user?.email ? user.email.split("@")[0] : "User");
   const avatarLabel = displayName.substring(0, 2).toUpperCase();
 
   const handleLogout = async () => {
@@ -68,10 +69,15 @@ export default function AccountScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style={isDark ? "light" : "dark"} />
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
           {/* Header */}
           <View style={styles.header}>
-            <Text variant="headlineMedium" style={styles.title}>My Account</Text>
+            <Text variant="headlineMedium" style={styles.title}>
+              My Account.
+            </Text>
           </View>
 
           {/* Profile Card */}
@@ -83,12 +89,18 @@ export default function AccountScreen() {
               labelStyle={{ color: "#fff", fontWeight: "700" }}
             />
             <View style={styles.profileInfo}>
-              <Text variant="titleLarge" style={styles.profileName}>{displayName}</Text>
+              <Text variant="titleLarge" style={styles.profileName}>
+                {displayName}
+              </Text>
               {user?.email && (
-                <Text variant="bodyMedium" style={styles.profileDetail}>{user.email}</Text>
+                <Text variant="bodyMedium" style={styles.profileDetail}>
+                  {user.email}
+                </Text>
               )}
               {user?.phone && (
-                <Text variant="bodyMedium" style={styles.profileDetail}>+91 {user.phone}</Text>
+                <Text variant="bodyMedium" style={styles.profileDetail}>
+                  +91 {user.phone}
+                </Text>
               )}
             </View>
             <TouchableOpacity style={styles.editBtn} onPress={() => console.log("Edit Profile")}>
@@ -99,24 +111,38 @@ export default function AccountScreen() {
           {/* Quick Stats */}
           <View style={styles.statsCard}>
             <TouchableOpacity style={styles.statItem} onPress={() => router.push("/wishlist")}>
-              <Text variant="titleMedium" style={[styles.statNumber, { color: primaryColor }]}>{wishlistItems.length}</Text>
-              <Text variant="bodySmall" style={styles.statLabel}>Wishlist</Text>
+              <Text variant="titleMedium" style={[styles.statNumber, { color: primaryColor }]}>
+                {wishlistItems.length}
+              </Text>
+              <Text variant="bodySmall" style={styles.statLabel}>
+                Wishlist
+              </Text>
             </TouchableOpacity>
             <View style={styles.statDivider} />
             <TouchableOpacity style={styles.statItem} onPress={() => router.push("/orders")}>
-              <Text variant="titleMedium" style={[styles.statNumber, { color: primaryColor }]}>{/* Dynamic count can be added later */}0</Text>
-              <Text variant="bodySmall" style={styles.statLabel}>Orders</Text>
+              <Text variant="titleMedium" style={[styles.statNumber, { color: primaryColor }]}>
+                {/* Dynamic count can be added later */}0
+              </Text>
+              <Text variant="bodySmall" style={styles.statLabel}>
+                Orders
+              </Text>
             </TouchableOpacity>
             <View style={styles.statDivider} />
             <TouchableOpacity style={styles.statItem} onPress={() => router.push("/addresses")}>
-              <Text variant="titleMedium" style={[styles.statNumber, { color: primaryColor }]}>0</Text>
-              <Text variant="bodySmall" style={styles.statLabel}>Addresses</Text>
+              <Text variant="titleMedium" style={[styles.statNumber, { color: primaryColor }]}>
+                0
+              </Text>
+              <Text variant="bodySmall" style={styles.statLabel}>
+                Addresses
+              </Text>
             </TouchableOpacity>
           </View>
 
           {/* Account Section */}
           <View style={styles.section}>
-            <Text variant="labelLarge" style={styles.sectionHeader}>ACCOUNT</Text>
+            <Text variant="labelLarge" style={styles.sectionHeader}>
+              ACCOUNT
+            </Text>
             <View style={styles.sectionCard}>
               <MenuItem
                 icon="heart-outline"
@@ -151,7 +177,9 @@ export default function AccountScreen() {
 
           {/* Preferences Section */}
           <View style={styles.section}>
-            <Text variant="labelLarge" style={styles.sectionHeader}>PREFERENCES</Text>
+            <Text variant="labelLarge" style={styles.sectionHeader}>
+              PREFERENCES
+            </Text>
             <View style={styles.sectionCard}>
               <MenuItem
                 icon="bell-outline"
@@ -169,7 +197,9 @@ export default function AccountScreen() {
 
           {/* Support Section */}
           <View style={styles.section}>
-            <Text variant="labelLarge" style={styles.sectionHeader}>SUPPORT</Text>
+            <Text variant="labelLarge" style={styles.sectionHeader}>
+              SUPPORT
+            </Text>
             <View style={styles.sectionCard}>
               <MenuItem
                 icon="help-circle-outline"
@@ -192,7 +222,9 @@ export default function AccountScreen() {
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text variant="bodySmall" style={styles.footerText}>Version 1.0.0</Text>
+            <Text variant="bodySmall" style={styles.footerText}>
+              Version 1.0.0
+            </Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -243,7 +275,12 @@ const styles = StyleSheet.create({
   statLabel: { color: "#666", marginTop: 4 },
   statDivider: { width: 1, height: 36, backgroundColor: "#eee" },
   section: { marginTop: 24, paddingHorizontal: 16 },
-  sectionHeader: { color: "#666", fontWeight: "600", marginBottom: 8, letterSpacing: 0.5 },
+  sectionHeader: {
+    color: "#666",
+    fontWeight: "600",
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
   sectionCard: {
     backgroundColor: "#fff",
     borderRadius: 16,

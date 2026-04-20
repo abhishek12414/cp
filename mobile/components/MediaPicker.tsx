@@ -35,7 +35,7 @@ interface MediaPickerProps {
    * Callback when images are selected
    * @param files - Array of selected files with their IDs and URLs
    */
-  onSelect: (files: Array<{ id: number; url: string }>) => void;
+  onSelect: (files: { id: number; url: string }[]) => void;
 
   /**
    * Whether to allow multiple selection
@@ -72,56 +72,59 @@ export function MediaPicker({
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<number[]>(selectedIds);
-  
+
   // Track if we've already loaded data to prevent duplicate API calls
   const hasLoadedRef = useRef(false);
   // Track the current visible state to prevent stale closures
   const visibleRef = useRef(visible);
 
   // Fetch files from Strapi - using ref to track loading state
-  const fetchFiles = useCallback(async (pageNum: number, refresh: boolean = false) => {
-    // Prevent duplicate calls
-    if (!refresh && hasLoadedRef.current && pageNum === 1) {
-      return;
-    }
-
-    if (refresh) {
-      setLoading(true);
-    } else {
-      setLoadingMore(true);
-    }
-
-    try {
-      const response = await uploadApi.getFiles(pageNum, pageSize);
-      const newFiles = response.data || [];
-      const pagination = response.meta?.pagination;
+  const fetchFiles = useCallback(
+    async (pageNum: number, refresh: boolean = false) => {
+      // Prevent duplicate calls
+      if (!refresh && hasLoadedRef.current && pageNum === 1) {
+        return;
+      }
 
       if (refresh) {
-        setFiles(newFiles);
-        hasLoadedRef.current = true;
+        setLoading(true);
       } else {
-        setFiles((prev) => [...prev, ...newFiles]);
+        setLoadingMore(true);
       }
 
-      setTotal(pagination?.total || newFiles.length);
-      setHasMore(pagination ? pageNum < pagination.pageCount : false);
-      setPage(pageNum);
-    } catch (error: any) {
-      console.error("Error fetching files:", error?.message || error);
-      // Don't crash, just show empty state
-      if (refresh) {
-        setFiles([]);
+      try {
+        const response = await uploadApi.getFiles(pageNum, pageSize);
+        const newFiles = response.data || [];
+        const pagination = response.meta?.pagination;
+
+        if (refresh) {
+          setFiles(newFiles);
+          hasLoadedRef.current = true;
+        } else {
+          setFiles((prev) => [...prev, ...newFiles]);
+        }
+
+        setTotal(pagination?.total || newFiles.length);
+        setHasMore(pagination ? pageNum < pagination.pageCount : false);
+        setPage(pageNum);
+      } catch (error: any) {
+        console.error("Error fetching files:", error?.message || error);
+        // Don't crash, just show empty state
+        if (refresh) {
+          setFiles([]);
+        }
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
       }
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [pageSize]);
+    },
+    [pageSize]
+  );
 
   // Reset and fetch when modal opens - with proper dependency management
   useEffect(() => {
     visibleRef.current = visible;
-    
+
     if (visible && !hasLoadedRef.current) {
       setFiles([]);
       setPage(1);
@@ -132,12 +135,12 @@ export function MediaPicker({
       // Just reset selection if already loaded
       setSelected(selectedIds);
     }
-    
+
     // Cleanup when modal closes
     if (!visible) {
       hasLoadedRef.current = false;
     }
-  }, [visible, selectedIds]); // Removed fetchFiles from dependencies to prevent infinite loop
+  }, [visible, selectedIds, fetchFiles]);
 
   // Load more files
   const handleLoadMore = () => {
@@ -150,9 +153,7 @@ export function MediaPicker({
   const toggleSelection = (fileId: number) => {
     if (multiple) {
       setSelected((prev) =>
-        prev.includes(fileId)
-          ? prev.filter((id) => id !== fileId)
-          : [...prev, fileId]
+        prev.includes(fileId) ? prev.filter((id) => id !== fileId) : [...prev, fileId]
       );
     } else {
       setSelected([fileId]);
@@ -180,26 +181,14 @@ export function MediaPicker({
 
     return (
       <TouchableOpacity
-        style={[
-          styles.imageContainer,
-          isSelected && styles.imageContainerSelected,
-        ]}
+        style={[styles.imageContainer, isSelected && styles.imageContainerSelected]}
         onPress={() => toggleSelection(item.id)}
         activeOpacity={0.8}
       >
-        <Image
-          source={{ uri: thumbnailUrl || "" }}
-          style={styles.image}
-          contentFit="cover"
-        />
+        <Image source={{ uri: thumbnailUrl || "" }} style={styles.image} contentFit="cover" />
         {isSelected && (
           <View style={styles.selectedOverlay}>
-            <IconButton
-              icon="check-circle"
-              iconColor="#fff"
-              size={24}
-              style={styles.checkIcon}
-            />
+            <IconButton icon="check-circle" iconColor="#fff" size={24} style={styles.checkIcon} />
           </View>
         )}
       </TouchableOpacity>
@@ -223,9 +212,7 @@ export function MediaPicker({
       <View style={styles.emptyContainer}>
         <IconButton icon="image-off" size={48} iconColor="#999" />
         <Text style={styles.emptyText}>No images found</Text>
-        <Text style={styles.emptySubtext}>
-          Upload some images to the media library first
-        </Text>
+        <Text style={styles.emptySubtext}>Upload some images to the media library first</Text>
       </View>
     );
   };
@@ -243,14 +230,10 @@ export function MediaPicker({
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <IconButton icon="close" size={24} />
           </TouchableOpacity>
-          <Text style={styles.title}>
-            Select {multiple ? "Images" : "Image"}
-          </Text>
+          <Text style={styles.title}>Select {multiple ? "Images" : "Image"}</Text>
           <View style={styles.headerRight}>
             {selected.length > 0 && (
-              <Text style={styles.selectedCount}>
-                {selected.length} selected
-              </Text>
+              <Text style={styles.selectedCount}>{selected.length} selected</Text>
             )}
           </View>
         </View>
@@ -284,11 +267,7 @@ export function MediaPicker({
 
         {/* Footer */}
         <View style={styles.footerContainer}>
-          <Button
-            mode="outlined"
-            onPress={onClose}
-            style={styles.cancelButton}
-          >
+          <Button mode="outlined" onPress={onClose} style={styles.cancelButton}>
             Cancel
           </Button>
           <Button

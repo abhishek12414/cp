@@ -34,7 +34,9 @@ export const addressApi = {
 
   // POST /api/addresses/:id/set-primary - Set address as primary
   setPrimary: (id: number | string) => {
-    return apiClient.post<ApiResponseInterface<AddressInterface>>(apiRoutes.ADDRESS_SET_PRIMARY(id.toString()));
+    return apiClient.post<ApiResponseInterface<AddressInterface>>(
+      apiRoutes.ADDRESS_SET_PRIMARY(id.toString())
+    );
   },
 };
 

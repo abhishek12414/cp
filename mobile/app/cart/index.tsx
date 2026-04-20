@@ -1,11 +1,5 @@
 import React, { useState, useCallback } from "react";
-import {
-  StyleSheet,
-  View,
-  FlatList,
-  Alert,
-  RefreshControl,
-} from "react-native";
+import { StyleSheet, View, FlatList, Alert, RefreshControl } from "react-native";
 import { Text, Button, IconButton, Divider, Surface } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -23,23 +17,21 @@ import {
 } from "@/hooks/queries/useCart";
 import { CartItemInterface } from "@/interface";
 import { getImageUrl } from "@/helpers/image";
-import LoadingScreen from "@/components/LoadingScreen";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import OfflineScreen from "@/components/OfflineScreen";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export default function CartScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
-  
+
   const { data: cart, isLoading, error, refetch } = useCart();
   const updateCartItem = useUpdateCartItem();
   const removeFromCart = useRemoveFromCart();
   const clearCart = useClearCart();
   const { isConnected } = useNetworkStatus();
-  
+
   const [refreshing, setRefreshing] = useState(false);
 
   // Calculate cart totals
@@ -71,10 +63,7 @@ export default function CartScreen() {
     // Check stock
     const stockQuantity = item.product?.stockQuantity ?? item.product?.stock ?? 0;
     if (newQuantity > stockQuantity) {
-      Alert.alert(
-        "Insufficient Stock",
-        `Only ${stockQuantity} items available.`
-      );
+      Alert.alert("Insufficient Stock", `Only ${stockQuantity} items available.`);
       return;
     }
 
@@ -83,51 +72,43 @@ export default function CartScreen() {
         cartItemId: item.documentId,
         quantity: newQuantity,
       });
-    } catch (error) {
+    } catch {
       // Error handled in hook
     }
   };
 
   const handleRemoveItem = async (item: CartItemInterface) => {
-    Alert.alert(
-      "Remove Item",
-      `Remove ${item.product?.name || "this item"} from cart?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await removeFromCart.mutateAsync(item.documentId);
-            } catch (error) {
-              // Error handled in hook
-            }
-          },
+    Alert.alert("Remove Item", `Remove ${item.product?.name || "this item"} from cart?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await removeFromCart.mutateAsync(item.documentId);
+          } catch {
+            // Error handled in hook
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleClearCart = () => {
-    Alert.alert(
-      "Clear Cart",
-      "Are you sure you want to remove all items from your cart?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear All",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await clearCart.mutateAsync();
-            } catch (error) {
-              // Error handled in hook
-            }
-          },
+    Alert.alert("Clear Cart", "Are you sure you want to remove all items from your cart?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Clear All",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await clearCart.mutateAsync();
+          } catch {
+            // Error handled in hook
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleCheckout = () => {
@@ -148,11 +129,7 @@ export default function CartScreen() {
     return (
       <Surface style={[styles.cartItemContainer, isOutOfStock && styles.outOfStockItem]}>
         {productImage ? (
-          <Image
-            source={{ uri: productImage }}
-            style={styles.productImage}
-            contentFit="cover"
-          />
+          <Image source={{ uri: productImage }} style={styles.productImage} contentFit="cover" />
         ) : (
           <View style={[styles.productImage, styles.noImage]}>
             <Text style={styles.noImageText}>No Image</Text>
@@ -160,11 +137,7 @@ export default function CartScreen() {
         )}
 
         <View style={styles.productInfo}>
-          <Text
-            variant="titleMedium"
-            numberOfLines={2}
-            style={styles.productName}
-          >
+          <Text variant="titleMedium" numberOfLines={2} style={styles.productName}>
             {item.product?.name || "Unknown Product"}
           </Text>
 
@@ -178,9 +151,7 @@ export default function CartScreen() {
             ₹{productPrice.toFixed(0)}
           </Text>
 
-          {isOutOfStock && (
-            <Text style={styles.outOfStockText}>Out of Stock</Text>
-          )}
+          {isOutOfStock && <Text style={styles.outOfStockText}>Out of Stock</Text>}
 
           {isLowStock && !isOutOfStock && (
             <Text style={styles.lowStockText}>Only {stockQuantity} left</Text>
@@ -246,11 +217,7 @@ export default function CartScreen() {
             Shopping Cart
           </Text>
           {cartItems.length > 0 && (
-            <Button
-              onPress={handleClearCart}
-              textColor="red"
-              disabled={clearCart.isPending}
-            >
+            <Button onPress={handleClearCart} textColor="red" disabled={clearCart.isPending}>
               Clear
             </Button>
           )}
@@ -258,7 +225,9 @@ export default function CartScreen() {
 
         {cartItems.length === 0 ? (
           <View style={styles.emptyCartContainer}>
-            <Text variant="displaySmall" style={styles.emptyIcon}>🛒</Text>
+            <Text variant="displaySmall" style={styles.emptyIcon}>
+              🛒
+            </Text>
             <Text variant="titleLarge" style={styles.emptyCartText}>
               Your cart is empty
             </Text>
@@ -281,12 +250,7 @@ export default function CartScreen() {
               renderItem={renderCartItem}
               keyExtractor={(item) => item.documentId}
               contentContainerStyle={styles.cartItemsList}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={handleRefresh}
-                />
-              }
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             />
 
             <Surface style={styles.summaryContainer}>

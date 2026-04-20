@@ -1,19 +1,6 @@
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
-import {
-  Button,
-  Text,
-  IconButton,
-  TextInput,
-  ActivityIndicator,
-  Chip,
-} from "react-native-paper";
+import { StyleSheet, View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { Button, Text, IconButton, TextInput, ActivityIndicator, Chip } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
@@ -25,7 +12,6 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
 import { useCreateUploadOrder } from "@/hooks/queries";
 import uploadApi from "@/apis/upload.api";
-import { API_URL } from "@/apis/apiRoutes";
 
 interface SelectedFile {
   uri: string;
@@ -134,7 +120,10 @@ export default function NewUploadOrderScreen() {
       });
       router.back();
     } catch (error: any) {
-      Alert.alert("Error", error?.response?.data?.error?.message || "Failed to create upload order");
+      Alert.alert(
+        "Error",
+        error?.response?.data?.error?.message || "Failed to create upload order"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -159,7 +148,8 @@ export default function NewUploadOrderScreen() {
           {/* Info Card */}
           <View style={styles.infoCard}>
             <Text variant="bodyMedium" style={styles.infoText}>
-              Upload images or documents shared by your electrician. Our team will review and create a quote for you.
+              Upload images or documents shared by your electrician. Our team will review and create
+              a quote for you.
             </Text>
           </View>
 
@@ -174,9 +164,7 @@ export default function NewUploadOrderScreen() {
               onPress={handlePickImages}
             >
               <IconButton icon="cloud-upload" size={32} iconColor={primaryColor} />
-              <Text style={[styles.uploadText, { color: primaryColor }]}>
-                Tap to select files
-              </Text>
+              <Text style={[styles.uploadText, { color: primaryColor }]}>Tap to select files</Text>
               <Text variant="bodySmall" style={styles.uploadHint}>
                 Images or PDFs
               </Text>

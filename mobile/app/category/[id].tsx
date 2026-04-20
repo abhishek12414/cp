@@ -1,14 +1,14 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState, useCallback, useMemo } from "react";
-import { FlatList, StyleSheet, View, Dimensions, ScrollView } from "react-native";
+import { FlatList, StyleSheet, View, Dimensions } from "react-native";
 import { ActivityIndicator, IconButton, Text, Chip, Button } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 
 import { ThemedView } from "@/components/ThemedView";
 import ProductCard from "@/components/ui/ProductCard";
-import FilterModal from "@/components/ui/FilterModal";
+import { FilterModal } from "@/components/ui/FilterModal";
 import { buildFilterQuery } from "@/components/ui/ProductFilter";
 
 import { Colors } from "@/constants/Colors";
@@ -23,13 +23,10 @@ export default function CategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
-  const { data: category, isLoading: isLoadingCategory } =
-    useCategoryWithAttributes(id || "");
+  const { data: category, isLoading: isLoadingCategory } = useCategoryWithAttributes(id || "");
 
   const { data: brands = [] } = useBrand();
 
@@ -49,8 +46,7 @@ export default function CategoryScreen() {
     };
   }, [id, filters]);
 
-  const { data: categoryProducts, isLoading: isLoadingProducts } =
-    useProducts(query);
+  const { data: categoryProducts, isLoading: isLoadingProducts } = useProducts(query);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -189,7 +185,12 @@ export default function CategoryScreen() {
               horizontal
               data={[
                 ...(filters?.priceRange.min !== null || filters?.priceRange.max !== null
-                  ? [{ id: "price", label: `Price: ${filters?.priceRange.min || 0} - ${filters?.priceRange.max || "∞"}` }]
+                  ? [
+                      {
+                        id: "price",
+                        label: `Price: ${filters?.priceRange.min || 0} - ${filters?.priceRange.max || "∞"}`,
+                      },
+                    ]
                   : []),
                 ...(filters?.brands.selectedBrandIds.map((brandId) => ({
                   id: `brand-${brandId}`,
@@ -210,9 +211,7 @@ export default function CategoryScreen() {
                     // Handle removing individual filter
                     if (item.id === "price") {
                       setFilters((prev) =>
-                        prev
-                          ? { ...prev, priceRange: { min: null, max: null } }
-                          : null
+                        prev ? { ...prev, priceRange: { min: null, max: null } } : null
                       );
                     } else if (item.id.startsWith("brand-")) {
                       const brandId = item.id.replace("brand-", "");
@@ -290,9 +289,7 @@ export default function CategoryScreen() {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text variant="titleMedium">No products found</Text>
-                <Text variant="bodyMedium">
-                  Try changing your search or filters
-                </Text>
+                <Text variant="bodyMedium">Try changing your search or filters</Text>
                 {activeFilterCount > 0 && (
                   <Button
                     mode="outlined"

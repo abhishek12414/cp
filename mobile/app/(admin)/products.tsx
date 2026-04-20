@@ -12,7 +12,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
 import { useProducts } from "@/hooks/queries";
 import { ProductInterface } from "@/interface";
-import productApi from "@/apis/product.api";
+import { productApi } from "@/apis/product.api";
 import { getImageUrl } from "@/helpers/image";
 
 /**
@@ -25,9 +25,7 @@ import { getImageUrl } from "@/helpers/image";
 
 export default function ManageProductsScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   const { data: products = [], isLoading, error, refetch } = useProducts({});
@@ -152,18 +150,23 @@ export default function ManageProductsScreen() {
                       {item.brand?.name ? ` • ${item.brand.name}` : ""}
                     </Text>
                     <View style={styles.priceRow}>
-                      <Text style={styles.productPrice}>
-                        ₹{item.price?.toFixed(2)}
-                      </Text>
+                      <Text style={styles.productPrice}>₹{item.price?.toFixed(2)}</Text>
                       {item.stockQuantity !== undefined && (
-                        <Text style={[
-                          styles.stockText,
-                          item.stockQuantity === 0 ? styles.outOfStock : 
-                          item.stockQuantity < 5 ? styles.lowStock : styles.inStock
-                        ]}>
-                          {item.stockQuantity === 0 ? "Out of stock" :
-                           item.stockQuantity < 5 ? `Only ${item.stockQuantity} left` :
-                           "In stock"}
+                        <Text
+                          style={[
+                            styles.stockText,
+                            item.stockQuantity === 0
+                              ? styles.outOfStock
+                              : item.stockQuantity < 5
+                                ? styles.lowStock
+                                : styles.inStock,
+                          ]}
+                        >
+                          {item.stockQuantity === 0
+                            ? "Out of stock"
+                            : item.stockQuantity < 5
+                              ? `Only ${item.stockQuantity} left`
+                              : "In stock"}
                         </Text>
                       )}
                     </View>
@@ -344,4 +347,3 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
 });
-

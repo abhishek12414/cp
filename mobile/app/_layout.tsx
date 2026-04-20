@@ -1,14 +1,11 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as Updates from "expo-updates";
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { Linking, AppState, AppStateStatus } from "react-native";
+import { Alert, Linking, AppState, AppStateStatus, Platform } from "react-native";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -20,17 +17,14 @@ import {
   initializeSuccess,
   initializeFail,
   setOffline,
+  User,
 } from "@/reducers/auth.reducer";
 import authApi from "@/apis/auth.api";
-import { User } from "@/reducers/auth.reducer";
 import OfflineScreen from "@/components/OfflineScreen";
-import LoadingScreen from "@/components/LoadingScreen";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { createQueryClient, setupQueryPersistence } from "@/config/queryClient";
 import { analytics } from "@/services/analytics";
-import {
-  initializeNetworkMonitoring,
-  useNetworkStatus,
-} from "@/hooks/useNetworkStatus";
+import { initializeNetworkMonitoring, useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -38,12 +32,44 @@ SplashScreen.preventAutoHideAsync();
 // Create query client with proper configuration
 const queryClient = createQueryClient();
 
+/**
+ * Check for OTA updates from EAS Update.
+ * In dev-client / Expo Go the Updates API is not available, so we guard
+ * behind `__DEV__` and the channel check to avoid crashes.
+ */
+async function checkForOTAUpdate() {
+  if (__DEV__) return; // skip in development
+  try {
+    const update = await Updates.checkForUpdateAsync();
+    if (update.isAvailable) {
+      await Updates.fetchUpdateAsync();
+      Alert.alert(
+        "Update Available",
+        "A new version has been downloaded. Restart now to apply the update?",
+        [
+          { text: "Later", style: "cancel" },
+          {
+            text: "Restart",
+            onPress: async () => {
+              await Updates.reloadAsync();
+            },
+          },
+        ]
+      );
+    }
+  } catch (err) {
+    // Silently fail — OTA is best-effort. The user still has the
+    // current bundle and can continue using the app.
+    if (Platform.OS !== "web") {
+      console.log("OTA update check failed:", err);
+    }
+  }
+}
+
 // Auth Provider Component
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
-  const { isInitialized, isAuthenticated, isOffline } = useSelector(
-    (state: any) => state.auth
-  );
+  const { isInitialized, isOffline } = useSelector((state: any) => state.auth);
   const [isChecking, setIsChecking] = useState(true);
   const { checkConnectivity } = useNetworkStatus();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
@@ -90,16 +116,16 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         dispatch(initializeSuccess({ user, token }));
-        
+
         // Set user ID for analytics
         analytics.setUserId(String(user.id));
-      } catch (error) {
+      } catch {
         // Token is invalid or expired
         await AsyncStorage.removeItem("auth_token");
         dispatch(initializeFail());
         analytics.setUserId(null);
       }
-    } catch (error) {
+    } catch {
       dispatch(initializeFail());
     } finally {
       setIsChecking(false);
@@ -108,19 +134,13 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Handle app state changes (foreground/background)
   useEffect(() => {
-    const subscription = AppState.addEventListener(
-      "change",
-      (nextAppState: AppStateStatus) => {
-        if (
-          appStateRef.current.match(/inactive|background/) &&
-          nextAppState === "active"
-        ) {
-          // App came to foreground, re-check auth
-          initializeAuth();
-        }
-        appStateRef.current = nextAppState;
+    const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === "active") {
+        // App came to foreground, re-check auth
+        initializeAuth();
       }
-    );
+      appStateRef.current = nextAppState;
+    });
 
     return () => {
       subscription.remove();
@@ -194,6 +214,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 // App Initialization Component
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
     const initialize = async () => {
@@ -208,6 +229,9 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
         await setupQueryPersistence(queryClient);
 
         setIsReady(true);
+
+        // Check for OTA updates after the app is ready
+        checkForOTAUpdate();
       } catch (error) {
         console.error("App initialization failed:", error);
         // Continue even if some initialization fails
@@ -216,6 +240,17 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
     };
 
     initialize();
+  }, []);
+
+  // Re-check for updates when the app comes back to the foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === "active") {
+        checkForOTAUpdate();
+      }
+      appStateRef.current = nextAppState;
+    });
+    return () => subscription.remove();
   }, []);
 
   if (!isReady) {
@@ -249,9 +284,7 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
           <AppInitializer>
             <AuthProvider>
               <RootNavigator />
@@ -266,9 +299,7 @@ export default function RootLayout() {
 
 // Root Navigator Component
 function RootNavigator() {
-  const { isAuthenticated, isInitialized, isOffline } = useSelector(
-    (state: any) => state.auth
-  );
+  const { isAuthenticated, isInitialized, isOffline } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch();
   const { checkConnectivity } = useNetworkStatus();
 
@@ -326,10 +357,7 @@ function RootNavigator() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen
-        name="(admin)"
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="(admin)" options={{ headerShown: false }} />
       <Stack.Screen name="product" />
       <Stack.Screen name="category" />
       <Stack.Screen name="upload-order" />

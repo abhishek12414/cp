@@ -16,7 +16,7 @@ import { Formik } from "formik";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
-import FormField from "@/components/FormField";
+import { FormField } from "@/components/FormField";
 import { useAddress, useUpdateAddress } from "@/hooks/queries";
 import {
   addressValidationSchema,
@@ -28,9 +28,7 @@ export default function EditAddressScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const isDark = colorScheme === "dark";
 
@@ -173,11 +171,7 @@ export default function EditAddressScreen() {
                     label="Country"
                     placeholder="Enter country"
                   />
-                  <FormField
-                    name="isPrimary"
-                    type="switch"
-                    label="Set as Primary Address"
-                  />
+                  <FormField name="isPrimary" type="switch" label="Set as Primary Address" />
                 </ScrollView>
 
                 <View style={styles.footer}>

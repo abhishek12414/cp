@@ -37,7 +37,7 @@ class NetworkManager {
     if (this._isConnected !== connected) {
       this._isConnected = connected;
       this.notifyListeners(connected);
-      
+
       // Update React Query's online manager
       onlineManager.setOnline(connected);
     }
@@ -141,10 +141,7 @@ export const useNetworkStatusWithCheck = (checkIntervalMs: number = 30000) => {
 
     // Check on app state change
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (
-        appStateRef.current.match(/inactive|background/) &&
-        nextAppState === "active"
-      ) {
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === "active") {
         // App came to foreground, check connectivity
         checkNetwork();
       }

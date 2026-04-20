@@ -19,22 +19,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
 import * as Yup from "yup";
 
-import {
-  loginRequest,
-  loginSuccess,
-  loginFailure,
-} from "@/reducers/auth.reducer";
+import { loginRequest, loginSuccess, loginFailure, User } from "@/reducers/auth.reducer";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
 import authApi from "@/apis/auth.api";
-import { User } from "@/reducers/auth.reducer";
 
 // Validation schema
 const LoginSchema = Yup.object().shape({
-  identifier: Yup.string()
-    .email("Please enter a valid email")
-    .required("Email is required"),
+  identifier: Yup.string().email("Please enter a valid email").required("Email is required"),
   password: Yup.string()
     .min(6, "Password must be at least 6 characters")
     .required("Password is required"),
@@ -47,9 +40,7 @@ interface LoginFormValues {
 
 export default function LoginScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state: any) => state.auth);
@@ -131,34 +122,20 @@ export default function LoginScreen() {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.logoContainer}>
-              <Image
-                source={require("../assets/images/react-logo.png")}
-                style={styles.logo}
-              />
-              <Text style={[styles.logoText, { color: primaryColor }]}>
-                CurrentShop
-              </Text>
+              <Image source={require("../assets/images/react-logo.png")} style={styles.logo} />
+              <Text style={[styles.logoText, { color: primaryColor }]}>CurrentShop</Text>
             </View>
 
             <View style={styles.formContainer}>
               <Text style={styles.welcomeText}>Welcome Back</Text>
-              <Text style={styles.subtitleText}>
-                Sign in to continue shopping
-              </Text>
+              <Text style={styles.subtitleText}>Sign in to continue shopping</Text>
 
               <Formik
                 initialValues={initialValues}
                 validationSchema={LoginSchema}
                 onSubmit={handleLogin}
               >
-                {({
-                  handleChange,
-                  handleBlur,
-                  handleSubmit,
-                  values,
-                  errors,
-                  touched,
-                }) => (
+                {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
                   <View style={styles.form}>
                     {/* Email Input */}
                     <View style={styles.inputContainer}>
@@ -166,9 +143,7 @@ export default function LoginScreen() {
                       <TextInput
                         style={[
                           styles.input,
-                          touched.identifier &&
-                            errors.identifier &&
-                            styles.inputError,
+                          touched.identifier && errors.identifier && styles.inputError,
                         ]}
                         placeholder="Enter your email"
                         placeholderTextColor="#999"
@@ -181,9 +156,7 @@ export default function LoginScreen() {
                         editable={!loading}
                       />
                       {touched.identifier && errors.identifier && (
-                        <Text style={styles.errorText}>
-                          {errors.identifier}
-                        </Text>
+                        <Text style={styles.errorText}>{errors.identifier}</Text>
                       )}
                     </View>
 
@@ -194,9 +167,7 @@ export default function LoginScreen() {
                         <TextInput
                           style={[
                             styles.passwordInput,
-                            touched.password &&
-                              errors.password &&
-                              styles.inputError,
+                            touched.password && errors.password && styles.inputError,
                           ]}
                           placeholder="Enter your password"
                           placeholderTextColor="#999"
@@ -211,9 +182,7 @@ export default function LoginScreen() {
                           style={styles.eyeButton}
                           onPress={() => setShowPassword(!showPassword)}
                         >
-                          <Text style={styles.eyeText}>
-                            {showPassword ? "🙈" : "👁️"}
-                          </Text>
+                          <Text style={styles.eyeText}>{showPassword ? "🙈" : "👁️"}</Text>
                         </TouchableOpacity>
                       </View>
                       {touched.password && errors.password && (
@@ -226,12 +195,7 @@ export default function LoginScreen() {
                       style={styles.forgotPasswordContainer}
                       onPress={() => router.push("/forgot-password")}
                     >
-                      <Text
-                        style={[
-                          styles.forgotPasswordText,
-                          { color: primaryColor },
-                        ]}
-                      >
+                      <Text style={[styles.forgotPasswordText, { color: primaryColor }]}>
                         Forgot Password?
                       </Text>
                     </TouchableOpacity>
@@ -251,11 +215,7 @@ export default function LoginScreen() {
                       style={styles.loginButton}
                       disabled={loading}
                     >
-                      {loading ? (
-                        <ActivityIndicator animating color="#fff" />
-                      ) : (
-                        "Sign In"
-                      )}
+                      {loading ? <ActivityIndicator animating color="#fff" /> : "Sign In"}
                     </Button>
                   </View>
                 )}
@@ -272,9 +232,7 @@ export default function LoginScreen() {
               <View style={styles.signupContainer}>
                 <Text style={styles.signupText}>Don&apos;t have an account? </Text>
                 <TouchableOpacity onPress={() => router.push("/signup")}>
-                  <Text style={[styles.signupLink, { color: primaryColor }]}>
-                    Sign Up
-                  </Text>
+                  <Text style={[styles.signupLink, { color: primaryColor }]}>Sign Up</Text>
                 </TouchableOpacity>
               </View>
             </View>

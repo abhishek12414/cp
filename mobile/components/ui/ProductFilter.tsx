@@ -59,13 +59,12 @@ export const buildFilterQuery = (
   const activeAttributeFilters = Object.values(filters.attributes).filter(
     (attr) => attr.value !== null && attr.value !== "" && attr.value !== undefined
   );
-  
+
   if (activeAttributeFilters.length > 0) {
     query.filters.$and = activeAttributeFilters.map((attr) => {
-      const valueFilter = attr.fieldType === "number"
-        ? { $eq: Number(attr.value) }
-        : { $eq: String(attr.value) };
-      
+      const valueFilter =
+        attr.fieldType === "number" ? { $eq: Number(attr.value) } : { $eq: String(attr.value) };
+
       return {
         attributeValues: {
           attribute: { id: { $eq: attr.attributeId } },
@@ -111,13 +110,7 @@ interface SelectDropdownProps {
   label: string;
 }
 
-function SelectDropdown({
-  options,
-  value,
-  onChange,
-  placeholder,
-  label,
-}: SelectDropdownProps) {
+function SelectDropdown({ options, value, onChange, placeholder, label }: SelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const displayValue = value || placeholder;
 
@@ -128,9 +121,7 @@ function SelectDropdown({
         style={[styles.dropdownButton, value ? styles.dropdownButtonSelected : null]}
         onPress={() => setIsOpen(!isOpen)}
       >
-        <Text
-          style={[styles.dropdownButtonText, !value ? styles.dropdownPlaceholder : null]}
-        >
+        <Text style={[styles.dropdownButtonText, !value ? styles.dropdownPlaceholder : null]}>
           {displayValue}
         </Text>
         <Text style={styles.dropdownArrow}>{isOpen ? "▲" : "▼"}</Text>
@@ -274,9 +265,7 @@ function PriceRangeInput({ value, onChange }: PriceRangeProps) {
             style={styles.priceInput}
             placeholder="0"
             value={value.min !== null ? String(value.min) : ""}
-            onChangeText={(text) =>
-              onChange({ ...value, min: text ? Number(text) : null })
-            }
+            onChangeText={(text) => onChange({ ...value, min: text ? Number(text) : null })}
             keyboardType="decimal-pad"
           />
         </View>
@@ -287,9 +276,7 @@ function PriceRangeInput({ value, onChange }: PriceRangeProps) {
             style={styles.priceInput}
             placeholder="Any"
             value={value.max !== null ? String(value.max) : ""}
-            onChangeText={(text) =>
-              onChange({ ...value, max: text ? Number(text) : null })
-            }
+            onChangeText={(text) => onChange({ ...value, max: text ? Number(text) : null })}
             keyboardType="decimal-pad"
           />
         </View>
@@ -373,13 +360,8 @@ function SortOptions({ value, onChange }: SortOptionsProps) {
               key={option.label}
               selected={value === option.value}
               onPress={() => onChange(option.value)}
-              style={[
-                styles.sortChip,
-                value === option.value && styles.sortChipSelected,
-              ]}
-              textStyle={
-                value === option.value ? styles.sortChipTextSelected : styles.sortChipText
-              }
+              style={[styles.sortChip, value === option.value && styles.sortChipSelected]}
+              textStyle={value === option.value ? styles.sortChipTextSelected : styles.sortChipText}
             >
               {option.label}
             </Chip>
@@ -424,35 +406,40 @@ export function ProductFilter({
   const primaryColor = Colors[colorScheme].primary;
 
   // Initialize attribute filter states
-  const createAttributeStates = useCallback((attrs: AttributeInterface[], existingFilters?: Record<number, AttributeFilterState>) => {
-    const states: Record<number, AttributeFilterState> = {};
-    attrs.forEach((attr) => {
-      if (attr.isFilterable !== false) {
-        states[attr.id] = {
-          attributeId: attr.id,
-          attributeSlug: attr.slug,
-          attributeName: attr.name,
-          fieldType: attr.fieldType,
-          value: existingFilters?.[attr.id]?.value ?? initialFilters?.attributes?.[attr.id]?.value ?? null,
-          options: attr.options,
-          unit: attr.unit,
-        };
-      }
-    });
-    return states;
-  }, [initialFilters]);
+  const createAttributeStates = useCallback(
+    (attrs: AttributeInterface[], existingFilters?: Record<number, AttributeFilterState>) => {
+      const states: Record<number, AttributeFilterState> = {};
+      attrs.forEach((attr) => {
+        if (attr.isFilterable !== false) {
+          states[attr.id] = {
+            attributeId: attr.id,
+            attributeSlug: attr.slug,
+            attributeName: attr.name,
+            fieldType: attr.fieldType,
+            value:
+              existingFilters?.[attr.id]?.value ??
+              initialFilters?.attributes?.[attr.id]?.value ??
+              null,
+            options: attr.options,
+            unit: attr.unit,
+          };
+        }
+      });
+      return states;
+    },
+    [initialFilters]
+  );
 
-  const [attributeFilters, setAttributeFilters] =
-    useState<Record<number, AttributeFilterState>>(() => createAttributeStates(attributes));
+  const [attributeFilters, setAttributeFilters] = useState<Record<number, AttributeFilterState>>(
+    () => createAttributeStates(attributes)
+  );
   const [priceRange, setPriceRange] = useState<PriceRangeFilter>(
     initialFilters?.priceRange ?? { min: null, max: null }
   );
   const [brandFilter, setBrandFilter] = useState<BrandFilterState>(
     initialFilters?.brands ?? { selectedBrandIds: [] }
   );
-  const [sortBy, setSortBy] = useState<ProductFilterState["sortBy"]>(
-    initialFilters?.sortBy
-  );
+  const [sortBy, setSortBy] = useState<ProductFilterState["sortBy"]>(initialFilters?.sortBy);
 
   // Update attribute filters when attributes prop changes
   useEffect(() => {
@@ -548,9 +535,7 @@ export function ProductFilter({
         <Text style={styles.headerTitle}>Filters</Text>
         {activeFilterCount > 0 && (
           <TouchableOpacity onPress={handleClearAll} style={styles.clearAllButton}>
-            <Text style={[styles.clearAllText, { color: primaryColor }]}>
-              Clear All
-            </Text>
+            <Text style={[styles.clearAllText, { color: primaryColor }]}>Clear All</Text>
           </TouchableOpacity>
         )}
         <View style={styles.headerButtons}>
@@ -574,8 +559,8 @@ export function ProductFilter({
       </View>
 
       {/* Scrollable filter content */}
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
         keyboardShouldPersistTaps="handled"

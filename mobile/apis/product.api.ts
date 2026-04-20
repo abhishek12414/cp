@@ -1,11 +1,7 @@
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
 import uploadApi from "./upload.api";
-import {
-  ApiResponseInterface,
-  ProductInput,
-  ProductInterface,
-} from "@/interface";
+import { ApiResponseInterface, ProductInput, ProductInterface } from "@/interface";
 
 export interface ProductAttributeValueInput {
   attribute: number;
@@ -22,30 +18,22 @@ export interface ProductFilters {
 
 export const productApi = {
   getProducts: (params?: ProductFilters) => {
-    return apiClient.get<ApiResponseInterface<ProductInterface[]>>(
-      apiRoutes.PRODUCTS,
-      {
-        params,
-      },
-    );
+    return apiClient.get<ApiResponseInterface<ProductInterface[]>>(apiRoutes.PRODUCTS, {
+      params,
+    });
   },
 
   getProduct: (id: string) => {
-    return apiClient.get<ApiResponseInterface<ProductInterface>>(
-      apiRoutes.PRODUCT(id),
-    );
+    return apiClient.get<ApiResponseInterface<ProductInterface>>(apiRoutes.PRODUCT(id));
   },
 
   searchProducts: (query: string, params?: ProductFilters) => {
-    return apiClient.get<ApiResponseInterface<ProductInterface[]>>(
-      apiRoutes.SEARCH_PRODUCTS,
-      {
-        params: {
-          query,
-          ...params,
-        },
+    return apiClient.get<ApiResponseInterface<ProductInterface[]>>(apiRoutes.SEARCH_PRODUCTS, {
+      params: {
+        query,
+        ...params,
       },
-    );
+    });
   },
 
   createProduct: (data: ProductInput) => {
@@ -66,14 +54,8 @@ export const productApi = {
     return apiClient.post(apiRoutes.PRODUCT_ATTRIBUTE_VALUES, { data });
   },
 
-  updateAttributeValue: (
-    documentId: string,
-    data: ProductAttributeValueInput,
-  ) => {
-    return apiClient.put(
-      `${apiRoutes.PRODUCT_ATTRIBUTE_VALUES}/${documentId}`,
-      { data },
-    );
+  updateAttributeValue: (documentId: string, data: ProductAttributeValueInput) => {
+    return apiClient.put(`${apiRoutes.PRODUCT_ATTRIBUTE_VALUES}/${documentId}`, { data });
   },
 };
 

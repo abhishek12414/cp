@@ -74,8 +74,7 @@ export const apiRoutes = {
   SUPPORT_TICKETS: `${apiV1}/support-tickets`,
   SUPPORT_TICKET: (id: string) => `${apiV1}/support-tickets/${id}`,
   CREATE_SUPPORT_TICKET: `${apiV1}/support-tickets`,
-  REPLY_TO_SUPPORT_TICKET: (id: string) =>
-    `${apiV1}/support-tickets/${id}/reply`,
+  REPLY_TO_SUPPORT_TICKET: (id: string) => `${apiV1}/support-tickets/${id}/reply`,
 };
 
 export const getFullUrl = (path: string) => {

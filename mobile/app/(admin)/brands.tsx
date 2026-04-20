@@ -11,37 +11,35 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
 import BrandCard from "@/components/ui/BrandCard";
 import { useBrand } from "@/hooks/queries/useBrand";
-import brandApi from "@/apis/brand.api";
+import { brandApi } from "@/apis/brand.api";
 import { BrandInterface } from "@/interface";
 
 /**
  * Manage Brands screen in admin panel.
- * 
+ *
  * Route: /admin/brands
- * 
+ *
  * Displays list of brands from Strapi DB (via useBrand hook/api::brand.brand content type).
  * Features:
  * - List brands (reuse BrandCard)
  * - Add new brand button (nav to form)
  * - Edit brand (reuse form screen)
  * - Delete with confirmation (mutation + Alert)
- * 
+ *
  * Backend: See server/src/api/brand/content-types/brand/schema.json for fields (name, slug, logo, etc.).
  * CRUD via brand.api.ts ; React Query for data fetching/mutation/invalidation.
- * 
+ *
  * Schema summary:
  * - name (string, required, unique)
  * - slug (uid auto from name)
  * - description, website, isActive (bool), logo (media), products (relation)
- * 
+ *
  * Future extensions: Search, pagination, full media upload in form.
  */
 
 export default function ManageBrandsScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   // React Query for brands list (reuse existing hook; fetches from /api/brands?populate=logo)
@@ -100,10 +98,7 @@ export default function ManageBrandsScreen() {
     return (
       <ThemedView style={styles.container}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        <SafeAreaView 
-          style={styles.safeArea}
-          edges={['bottom', 'left', 'right']}
-        >
+        <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
           <View style={styles.center}>
             <Text>Loading brands...</Text>
           </View>
@@ -116,10 +111,7 @@ export default function ManageBrandsScreen() {
     return (
       <ThemedView style={styles.container}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        <SafeAreaView 
-          style={styles.safeArea}
-          edges={['bottom', 'left', 'right']}
-        >
+        <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
           <View style={styles.center}>
             <Text>Error loading brands: {error.message}</Text>
             <Button onPress={() => refetch()}>Retry</Button>
@@ -133,10 +125,7 @@ export default function ManageBrandsScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       {/* SafeAreaView with edges excluding 'top' for headered admin layout */}
-      <SafeAreaView 
-        style={styles.safeArea}
-        edges={['bottom', 'left', 'right']}
-      >
+      <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: primaryColor }]}>Manage Brands</Text>
           <Button

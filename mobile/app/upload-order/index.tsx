@@ -1,455 +1,355 @@
-import * as ExpoCamera from "expo-camera";
 import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
+import * as ExpoImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useRef, useState } from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import {
-  ActivityIndicator,
-  Button,
-  IconButton,
-  Text,
-} from "react-native-paper";
+import React, { useState } from "react";
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Button, Chip, IconButton, Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useCreateUploadOrder } from "@/hooks/queries";
+import uploadApi from "@/apis/upload.api";
 
-type UploadStep =
-  | "permission"
-  | "camera"
-  | "preview"
-  | "uploading"
-  | "success"
-  | "error";
+interface SelectedFile {
+  uri: string;
+  name: string;
+  type: string;
+  fileId?: number;
+  isUploading: boolean;
+}
 
 export default function UploadOrderScreen() {
-  const [step, setStep] = useState<UploadStep>("permission");
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // typed as any because Expo Camera types can be problematic in some TS configs
-  const cameraRef = useRef<any>(null);
-
-  // Resolve Camera component from the ExpoCamera module. Try several
-  // fallbacks: ExpoCamera.Camera, ExpoCamera.default, or null.
-  let CameraComponent: React.ComponentType<any> | null = null;
-  if (typeof ExpoCamera !== "undefined") {
-    if (
-      (ExpoCamera as any).Camera &&
-      (typeof (ExpoCamera as any).Camera === "function" ||
-        typeof (ExpoCamera as any).Camera === "object")
-    ) {
-      CameraComponent = (ExpoCamera as any).Camera as React.ComponentType<any>;
-    } else if (
-      (ExpoCamera as any).default &&
-      (typeof (ExpoCamera as any).default === "function" ||
-        typeof (ExpoCamera as any).default === "object")
-    ) {
-      CameraComponent = (ExpoCamera as any).default as React.ComponentType<any>;
-    }
-  }
-
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
+  const isDark = colorScheme === "dark";
 
-  // Treat Camera as available when the resolved component exists.
-  const hasCameraApi = !!CameraComponent;
+  const [files, setFiles] = useState<SelectedFile[]>([]);
+  const [notes, setNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Request camera permission when user presses the button.
-  const requestPermission = async () => {
-    setErrorMessage(null);
+  const createUploadOrder = useCreateUploadOrder();
+
+  const handleGoBack = () => {
+    router.back();
+  };
+
+  // Upload a single file to Strapi and update its state
+  const uploadFile = async (file: SelectedFile, index: number) => {
     try {
-      const cam = (ExpoCamera as any) || {};
+      const formData = new FormData();
+      formData.append("files", {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      } as any);
 
-      if (typeof cam.requestCameraPermissionsAsync === "function") {
-        const res = await cam.requestCameraPermissionsAsync();
-        const status = res?.status ?? (res?.granted ? "granted" : "denied");
-        setHasPermission(status === "granted");
-        if (status === "granted") setStep("camera");
-        else setErrorMessage("Permission denied.");
+      const uploadRes = await uploadApi.uploadFile(formData);
+      const uploadedFileId = uploadRes.data?.[0]?.id;
+
+      if (uploadedFileId) {
+        setFiles((prev) =>
+          prev.map((f, i) =>
+            i === index ? { ...f, fileId: uploadedFileId, isUploading: false } : f
+          )
+        );
+      } else {
+        throw new Error("No file ID returned");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setFiles((prev) => prev.map((f, i) => (i === index ? { ...f, isUploading: false } : f)));
+      Alert.alert(
+        "Upload Error",
+        `Failed to upload ${file.name}. You can remove it and try again.`
+      );
+    }
+  };
+
+  // Add files from picker result and start uploading
+  const processPickerResult = async (assets: ExpoImagePicker.ImagePickerAsset[]) => {
+    const startIndex = files.length;
+    const newFiles: SelectedFile[] = assets.map((asset) => ({
+      uri: asset.uri,
+      name: `image-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.jpg`,
+      type: asset.mimeType || "image/jpeg",
+      isUploading: true,
+    }));
+
+    setFiles((prev) => [...prev, ...newFiles]);
+
+    // Upload each file
+    for (let i = 0; i < newFiles.length; i++) {
+      await uploadFile(newFiles[i], startIndex + i);
+    }
+  };
+
+  // Pick images from gallery
+  const handlePickFromGallery = async () => {
+    try {
+      const permissionResult = await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert("Permission Required", "Please allow photo library access to select images.");
         return;
       }
 
-      if (typeof cam.getCameraPermissionsAsync === "function") {
-        const current = await cam.getCameraPermissionsAsync();
-        if (current?.status === "granted") {
-          setHasPermission(true);
-          setStep("camera");
-          return;
-        }
-        if (typeof cam.requestPermissionsAsync === "function") {
-          const res = await cam.requestPermissionsAsync();
-          setHasPermission(res?.status === "granted");
-          if (res?.status === "granted") setStep("camera");
-          else setErrorMessage("Permission denied.");
-          return;
-        }
-      }
+      const result = await ExpoImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
 
-      setErrorMessage("Camera not available on this platform.");
-    } catch (e) {
-      console.error("Permission request failed:", e);
-      setErrorMessage("Failed to request camera permission.");
+      if (result.canceled || !result.assets?.length) return;
+      await processPickerResult(result.assets);
+    } catch (error) {
+      console.error("Gallery picker error:", error);
+      Alert.alert("Error", "Unable to open gallery. Please try again.");
     }
   };
 
-  // Request camera permission on component mount (only if API exists)
-  React.useEffect(() => {
-    if (!hasCameraApi) {
-      setHasPermission(false);
+  // Take a photo with camera
+  const handleTakePhoto = async () => {
+    try {
+      const permissionResult = await ExpoImagePicker.requestCameraPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert("Permission Required", "Please allow camera access to take photos.");
+        return;
+      }
+
+      const result = await ExpoImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets?.length) return;
+      await processPickerResult(result.assets);
+    } catch (error) {
+      console.error("Camera error:", error);
+      Alert.alert("Error", "Unable to open camera. Please try again.");
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
+    if (files.length === 0) {
+      Alert.alert("No Files", "Please select at least one image to upload.");
       return;
     }
 
-    // Call the same request flow used for the button so SDK differences are handled.
-    requestPermission();
+    const uploadedFileIds = files.filter((f) => f.fileId).map((f) => f.fileId!);
+    if (uploadedFileIds.length === 0) {
+      Alert.alert("Uploading", "Please wait for files to finish uploading.");
+      return;
+    }
 
-    // Timeout fallback - if permission check hangs, show the permission UI after 3 seconds
-    const timeoutId = setTimeout(() => {
-      setHasPermission((current) => {
-        if (current === null) {
-          return false;
-        }
-        return current;
+    setIsSubmitting(true);
+    try {
+      await createUploadOrder.mutateAsync({
+        files: uploadedFileIds,
+        notes: notes.trim() || undefined,
       });
-    }, 3000);
 
-    return () => clearTimeout(timeoutId);
-  }, [hasCameraApi]);
-
-  const handleGoBack = () => {
-    if (step === "preview") {
-      setStep("camera");
-      setImageUri(null);
-    } else {
-      router.back();
-    }
-  };
-
-  const handleTakePicture = async () => {
-    if (
-      cameraRef.current &&
-      typeof cameraRef.current.takePictureAsync === "function"
-    ) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync();
-        setImageUri(photo.uri);
-        setStep("preview");
-      } catch (error) {
-        console.error("Error taking picture:", error);
-        setErrorMessage("Failed to take picture. Please try again.");
-      }
-    } else {
-      setErrorMessage("Camera is not available.");
-    }
-  };
-
-  const handleSelectFromGallery = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri);
-      setStep("preview");
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!imageUri) return;
-
-    setStep("uploading");
-
-    // Simulate upload with a timeout
-    setTimeout(() => {
-      // For demo purposes, let's just show success
-      setStep("success");
-
-      // In a real app, you would upload the image to your server:
-      /*
-      try {
-        const formData = new FormData();
-        formData.append('file', {
-          uri: imageUri,
-          type: 'image/jpeg',
-          name: 'order.jpg',
-        });
-        
-        const response = await fetch('YOUR_UPLOAD_ENDPOINT', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data',
+      Alert.alert(
+        "Order Submitted!",
+        "We\u2019ll review your order and get back to you with pricing details shortly.",
+        [
+          {
+            text: "Back to Home",
+            onPress: () => router.replace("/"),
           },
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-          setStep('success');
-        } else {
-          throw new Error(result.message || 'Upload failed');
-        }
-      } catch (error) {
-        console.error('Error uploading image:', error);
-        setStep('error');
-        setErrorMessage('Failed to upload image. Please try again.');
-      }
-      */
-    }, 2000);
-  };
-
-  const renderContent = () => {
-    switch (step) {
-      case "permission":
-        return (
-          <View style={styles.centerContainer}>
-            {hasPermission === null ? (
-              <ActivityIndicator color={primaryColor} size="large" />
-            ) : hasPermission === false ? (
-              <>
-                <Text variant="titleLarge" style={styles.permissionTitle}>
-                  Camera Permission Required
-                </Text>
-                <Text variant="bodyMedium" style={styles.permissionText}>
-                  We need camera permission to capture your purchase order.
-                </Text>
-                <Button
-                  mode="contained"
-                  buttonColor={primaryColor}
-                  onPress={requestPermission}
-                  style={styles.permissionButton}
-                >
-                  Grant Permission
-                </Button>
-                {errorMessage ? (
-                  <Text
-                    variant="bodySmall"
-                    style={{ color: Colors.light.error, marginTop: 12 }}
-                  >
-                    {errorMessage}
-                  </Text>
-                ) : null}
-              </>
-            ) : (
-              <ActivityIndicator color={primaryColor} size="large" />
-            )}
-          </View>
-        );
-
-      case "camera":
-        // If Camera API is missing, show a fallback with gallery option
-        if (!hasCameraApi) {
-          return (
-            <View style={styles.centerContainer}>
-              <Text variant="titleLarge" style={styles.permissionTitle}>
-                Camera Unavailable
-              </Text>
-              <Text variant="bodyMedium" style={styles.permissionText}>
-                Your platform does not support the native camera. You can still
-                pick an image from the gallery.
-              </Text>
-              <Button
-                mode="contained"
-                buttonColor={primaryColor}
-                onPress={handleSelectFromGallery}
-                style={styles.permissionButton}
-              >
-                Choose From Gallery
-              </Button>
-            </View>
-          );
-        }
-
-        return (
-          <>
-            {CameraComponent ? (
-              <CameraComponent
-                ref={cameraRef}
-                style={styles.camera}
-                // Use optional chaining to avoid accessing Constants when undefined
-                type={(ExpoCamera as any)?.Constants?.Type?.back}
-              >
-                <View style={styles.overlayContainer}>
-                  <View style={styles.focusFrame} />
-
-                  <View style={styles.cameraControls}>
-                    <TouchableOpacity
-                      style={styles.galleryButton}
-                      onPress={handleSelectFromGallery}
-                    >
-                      <IconButton icon="image" size={28} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.captureButton}
-                      onPress={handleTakePicture}
-                    >
-                      <View style={styles.captureButtonInner} />
-                    </TouchableOpacity>
-
-                    <View style={styles.placeholderButton} />
-                  </View>
-                </View>
-              </CameraComponent>
-            ) : (
-              <View style={styles.camera}>
-                <View style={styles.overlayContainer}>
-                  <View style={styles.focusFrame} />
-                  <View style={styles.cameraControls}>
-                    <TouchableOpacity
-                      style={styles.galleryButton}
-                      onPress={handleSelectFromGallery}
-                    >
-                      <IconButton icon="image" size={28} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.captureButton}
-                      onPress={() => setErrorMessage("Camera not available")}
-                    >
-                      <View style={styles.captureButtonInner} />
-                    </TouchableOpacity>
-
-                    <View style={styles.placeholderButton} />
-                  </View>
-                </View>
-              </View>
-            )}
-
-            <View style={styles.instructionContainer}>
-              <Text variant="titleMedium" style={styles.instructionTitle}>
-                Take a Photo of Your Purchase Order
-              </Text>
-              <Text variant="bodyMedium" style={styles.instructionText}>
-                Position the purchase order within the frame and ensure
-                it&apos;s clearly visible.
-              </Text>
-            </View>
-          </>
-        );
-
-      case "preview":
-        return (
-          <View style={styles.previewContainer}>
-            <Image
-              source={{ uri: imageUri || "" }}
-              style={styles.previewImage}
-              contentFit="contain"
-            />
-
-            <View style={styles.previewControls}>
-              <Button
-                mode="outlined"
-                onPress={() => setStep("camera")}
-                style={styles.previewButton}
-              >
-                Retake
-              </Button>
-
-              <Button
-                mode="contained"
-                buttonColor={primaryColor}
-                onPress={handleUpload}
-                style={styles.previewButton}
-              >
-                Upload Order
-              </Button>
-            </View>
-          </View>
-        );
-
-      case "uploading":
-        return (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator color={primaryColor} size="large" />
-            <Text variant="titleMedium" style={styles.uploadingText}>
-              Uploading your purchase order...
-            </Text>
-            <Text variant="bodyMedium" style={styles.uploadingSubtext}>
-              Please wait while we process your order.
-            </Text>
-          </View>
-        );
-
-      case "success":
-        return (
-          <View style={styles.centerContainer}>
-            <IconButton
-              icon="check-circle"
-              size={80}
-              iconColor={Colors.light.success}
-            />
-            <Text variant="titleLarge" style={styles.successTitle}>
-              Order Uploaded Successfully!
-            </Text>
-            <Text variant="bodyMedium" style={styles.successText}>
-              We&apos;ll process your order and get back to you with pricing
-              details within 2-3 hours.
-            </Text>
-            <Button
-              mode="contained"
-              buttonColor={primaryColor}
-              onPress={() => router.push("/")}
-              style={styles.successButton}
-            >
-              Back to Home
-            </Button>
-          </View>
-        );
-
-      case "error":
-        return (
-          <View style={styles.centerContainer}>
-            <IconButton
-              icon="alert-circle"
-              size={80}
-              iconColor={Colors.light.error}
-            />
-            <Text variant="titleLarge" style={styles.errorTitle}>
-              Upload Failed
-            </Text>
-            <Text variant="bodyMedium" style={styles.errorText}>
-              {errorMessage || "Something went wrong. Please try again."}
-            </Text>
-            <Button
-              mode="contained"
-              buttonColor={primaryColor}
-              onPress={() => setStep("camera")}
-              style={styles.errorButton}
-            >
-              Try Again
-            </Button>
-          </View>
-        );
+          {
+            text: "View My Uploads",
+            onPress: () => {
+              router.replace("/upload-orders");
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error?.response?.data?.error?.message || "Failed to submit order. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const allUploaded = files.length > 0 && files.every((f) => !f.isUploading);
+  const someUploading = files.some((f) => f.isUploading);
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <SafeAreaView style={styles.safeArea}>
+        {/* Header */}
         <View style={styles.header}>
-          <IconButton
-            icon="arrow-left"
-            size={24}
-            onPress={handleGoBack}
-            disabled={step === "uploading"}
-          />
+          <IconButton icon="arrow-left" size={24} onPress={handleGoBack} disabled={isSubmitting} />
           <Text variant="titleLarge" style={styles.headerTitle}>
             Upload Purchase Order
           </Text>
           <View style={{ width: 40 }} />
         </View>
 
-        {renderContent()}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Info Card */}
+          <View style={styles.infoCard}>
+            <IconButton
+              icon="information-outline"
+              size={20}
+              iconColor="#1565c0"
+              style={styles.infoIcon}
+            />
+            <Text variant="bodyMedium" style={styles.infoText}>
+              Upload photos of your purchase order, electrician&apos;s item list, or any document.
+              Our team will review and create a quote for you.
+            </Text>
+          </View>
+
+          {/* Source Options */}
+          <View style={styles.section}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Add Images
+            </Text>
+            <View style={styles.sourceOptions}>
+              {/* Camera Option */}
+              <TouchableOpacity
+                style={[styles.sourceCard, { borderColor: primaryColor }]}
+                onPress={handleTakePhoto}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.sourceIconCircle, { backgroundColor: primaryColor + "15" }]}>
+                  <IconButton
+                    icon="camera"
+                    size={28}
+                    iconColor={primaryColor}
+                    style={styles.sourceIconBtn}
+                  />
+                </View>
+                <Text variant="titleSmall" style={[styles.sourceLabel, { color: primaryColor }]}>
+                  Take Photo
+                </Text>
+                <Text variant="bodySmall" style={styles.sourceHint}>
+                  Use camera to capture
+                </Text>
+              </TouchableOpacity>
+
+              {/* Gallery Option */}
+              <TouchableOpacity
+                style={[styles.sourceCard, { borderColor: primaryColor }]}
+                onPress={handlePickFromGallery}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.sourceIconCircle, { backgroundColor: primaryColor + "15" }]}>
+                  <IconButton
+                    icon="image-multiple"
+                    size={28}
+                    iconColor={primaryColor}
+                    style={styles.sourceIconBtn}
+                  />
+                </View>
+                <Text variant="titleSmall" style={[styles.sourceLabel, { color: primaryColor }]}>
+                  Choose from Gallery
+                </Text>
+                <Text variant="bodySmall" style={styles.sourceHint}>
+                  Select existing photos
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Selected Files */}
+          {files.length > 0 && (
+            <View style={styles.section}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Selected Files ({files.length})
+              </Text>
+              <View style={styles.filesGrid}>
+                {files.map((file, index) => (
+                  <View key={`${file.uri}-${index}`} style={styles.fileItem}>
+                    <Image
+                      source={{ uri: file.uri }}
+                      style={styles.fileThumbnail}
+                      contentFit="cover"
+                    />
+                    {file.isUploading ? (
+                      <View style={styles.uploadingOverlay}>
+                        <ActivityIndicator size="small" color="#fff" />
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => handleRemoveFile(index)}
+                      >
+                        <Text style={styles.removeButtonText}>✕</Text>
+                      </TouchableOpacity>
+                    )}
+                    {file.fileId && (
+                      <Chip style={styles.uploadedChip} textStyle={styles.uploadedChipText}>
+                        ✓
+                      </Chip>
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Notes Section */}
+          <View style={styles.section}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Notes (Optional)
+            </Text>
+            <TextInput
+              mode="outlined"
+              placeholder="Add any details about the items you need..."
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              numberOfLines={4}
+              style={styles.notesInput}
+              outlineColor="#ddd"
+              activeOutlineColor={primaryColor}
+            />
+          </View>
+        </ScrollView>
+
+        {/* Bottom Submit Bar */}
+        <View style={styles.footer}>
+          {someUploading && (
+            <View style={styles.uploadingBanner}>
+              <ActivityIndicator size="small" color={primaryColor} />
+              <Text variant="bodySmall" style={styles.uploadingBannerText}>
+                Uploading images...
+              </Text>
+            </View>
+          )}
+          <Button
+            mode="contained"
+            buttonColor={primaryColor}
+            onPress={handleSubmit}
+            loading={isSubmitting}
+            disabled={isSubmitting || !allUploaded || files.length === 0}
+            style={styles.submitButton}
+            labelStyle={styles.submitButtonLabel}
+          >
+            {files.length === 0
+              ? "Add images to submit"
+              : isSubmitting
+                ? "Submitting..."
+                : `Submit Order (${files.length} file${files.length > 1 ? "s" : ""})`}
+          </Button>
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -467,152 +367,154 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   headerTitle: {
-    fontWeight: "600",
+    fontWeight: "700",
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 32,
   },
-  permissionTitle: {
-    fontWeight: "bold",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  permissionText: {
-    textAlign: "center",
+  infoCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#e3f2fd",
+    padding: 14,
+    borderRadius: 12,
     marginBottom: 24,
   },
-  permissionButton: {
-    paddingHorizontal: 24,
+  infoIcon: {
+    margin: 0,
+    marginRight: 4,
+    marginTop: -2,
   },
-  camera: {
+  infoText: {
     flex: 1,
+    color: "#1565c0",
+    lineHeight: 20,
   },
-  overlayContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
-    justifyContent: "center",
+  section: {
+    marginBottom: 24,
   },
-  focusFrame: {
-    alignSelf: "center",
-    width: "80%",
-    height: "50%",
-    borderWidth: 2,
-    borderColor: "white",
-    borderRadius: 12,
-    marginBottom: 100,
+  sectionTitle: {
+    fontWeight: "600",
+    marginBottom: 12,
   },
-  cameraControls: {
-    position: "absolute",
-    bottom: 40,
-    left: 0,
-    right: 0,
+  sourceOptions: {
     flexDirection: "row",
-    justifyContent: "space-evenly",
-    alignItems: "center",
+    gap: 12,
   },
-  captureButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    justifyContent: "center",
+  sourceCard: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingVertical: 20,
+    paddingHorizontal: 12,
     alignItems: "center",
+    backgroundColor: "#fff",
   },
-  captureButtonInner: {
+  sourceIconCircle: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "white",
-    borderWidth: 2,
-    borderColor: "rgba(0, 0, 0, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
   },
-  galleryButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+  sourceIconBtn: {
+    margin: 0,
+  },
+  sourceLabel: {
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  sourceHint: {
+    color: "#999",
+    textAlign: "center",
+  },
+  filesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  fileItem: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    overflow: "hidden",
+    position: "relative",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  fileThumbnail: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#f5f5f5",
+  },
+  uploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
-  placeholderButton: {
-    width: 44,
-    height: 44,
-  },
-  instructionContainer: {
-    padding: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-  },
-  instructionTitle: {
-    fontWeight: "600",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  instructionText: {
-    textAlign: "center",
-  },
-  previewContainer: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  previewImage: {
-    flex: 1,
-    margin: 16,
+  removeButton: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: "rgba(244,67,54,0.9)",
     borderRadius: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  previewControls: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  removeButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  uploadedChip: {
+    position: "absolute",
+    bottom: 4,
+    left: 4,
+    backgroundColor: "rgba(76,175,80,0.9)",
+    height: 22,
+    minHeight: 22,
+  },
+  uploadedChipText: {
+    fontSize: 10,
+    color: "#fff",
+  },
+  notesInput: {
+    backgroundColor: "#fff",
+  },
+  footer: {
     padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    backgroundColor: "#fff",
   },
-  previewButton: {
-    flex: 1,
-    marginHorizontal: 8,
+  uploadingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+    gap: 8,
   },
-  uploadingText: {
-    marginTop: 24,
+  uploadingBannerText: {
+    color: "#666",
+  },
+  submitButton: {
+    borderRadius: 10,
+    paddingVertical: 4,
+  },
+  submitButtonLabel: {
+    fontSize: 15,
     fontWeight: "600",
-  },
-  uploadingSubtext: {
-    marginTop: 12,
-    textAlign: "center",
-    opacity: 0.7,
-  },
-  successTitle: {
-    marginTop: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  successText: {
-    marginTop: 12,
-    textAlign: "center",
-    marginHorizontal: 24,
-    marginBottom: 24,
-  },
-  successButton: {
-    marginTop: 12,
-    paddingHorizontal: 32,
-  },
-  errorTitle: {
-    marginTop: 24,
-    fontWeight: "bold",
-    color: Colors.light.error,
-    textAlign: "center",
-  },
-  errorText: {
-    marginTop: 12,
-    textAlign: "center",
-    marginHorizontal: 24,
-    marginBottom: 24,
-  },
-  errorButton: {
-    marginTop: 12,
-    paddingHorizontal: 32,
   },
 });

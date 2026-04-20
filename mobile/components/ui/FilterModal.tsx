@@ -1,14 +1,8 @@
 import React, { useCallback, forwardRef, useImperativeHandle } from "react";
-import {
-  StyleSheet,
-  View,
-  Modal,
-  Dimensions,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, View, Modal, Dimensions, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import ProductFilter, { ProductFilterProps } from "./ProductFilter";
+import { ProductFilter, ProductFilterProps } from "./ProductFilter";
 import { ProductFilterState } from "@/interface";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -19,7 +13,10 @@ export interface FilterModalRef {
   close: () => void;
 }
 
-export interface FilterModalProps extends Omit<ProductFilterProps, "onApply" | "onClear" | "onFilterChange" | "onClose"> {
+export interface FilterModalProps extends Omit<
+  ProductFilterProps,
+  "onApply" | "onClear" | "onFilterChange" | "onClose"
+> {
   visible: boolean;
   onClose: () => void;
   onApplyFilters: (filters: ProductFilterState) => void;
@@ -59,11 +56,7 @@ export const FilterModal = forwardRef<FilterModalRef, FilterModalProps>(
       >
         <View style={styles.container}>
           {/* Backdrop - covers only the top area, modal content is on top */}
-          <TouchableOpacity
-            style={styles.backdrop}
-            activeOpacity={1}
-            onPress={onClose}
-          />
+          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
           {/* Modal Content - rendered after backdrop so it's on top */}
           <View style={[styles.modalContent, { paddingBottom: insets.bottom }]}>

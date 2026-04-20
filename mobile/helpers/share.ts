@@ -9,7 +9,7 @@ export function generateProductDeepLink(productId: string): string {
   // For Expo Go development, use the Expo linking URL
   // For production builds, use the custom scheme
   const isExpoGo = __DEV__ && Platform.OS !== "web";
-  
+
   if (isExpoGo) {
     // Get the current Expo development URL
     const url = LinkingExpo.createURL(`product/${productId}`);
@@ -28,7 +28,7 @@ export function generateProductShareUrl(productId: string, productName?: string)
   // For web sharing or if you have a web version
   // You can configure this to point to your web app or use the app deep link
   const deepLink = generateProductDeepLink(productId);
-  
+
   // For Expo Go, the URL can be shared directly
   // Users on Expo Go can open the link and it will navigate to the product
   return deepLink;
@@ -47,7 +47,7 @@ export async function shareProduct(
     const url = generateProductDeepLink(productId);
     const priceText = productPrice ? ` - ₹${productPrice.toFixed(0)}` : "";
     const message = `Check out ${productName}${priceText} on CurrentShop!\n\n${url}`;
-    
+
     const result = await Share.share({
       message,
       url: Platform.OS === "ios" ? url : undefined, // iOS can use URL separately
@@ -85,22 +85,22 @@ export function parseDeepLink(url: string): { type: string; id: string } | null 
     // currentshop://product/123
     // exp://host:port/--/product/123
     // https://yourapp.com/product/123
-    
+
     const urlObj = new URL(url);
     const pathname = urlObj.pathname;
-    
+
     // Check for product route
     const productMatch = pathname.match(/\/product\/([^/?]+)/);
     if (productMatch) {
       return { type: "product", id: productMatch[1] };
     }
-    
+
     // Check for category route
     const categoryMatch = pathname.match(/\/category\/([^/?]+)/);
     if (categoryMatch) {
       return { type: "category", id: categoryMatch[1] };
     }
-    
+
     return null;
   } catch (error) {
     console.error("Error parsing deep link:", error);

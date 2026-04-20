@@ -1,34 +1,25 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import { Button, Text, IconButton } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { Formik } from "formik";
+import React, { useState } from "react";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Button, IconButton, Text } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import { FormField } from "@/components/FormField";
 import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
-import FormField from "@/components/FormField";
-import { useCreateAddress } from "@/hooks/queries";
 import {
-  addressValidationSchema,
-  addressInitialValues,
   AddressFormValues,
+  addressInitialValues,
+  addressValidationSchema,
 } from "@/helpers/validation/address";
+import { useCreateAddress } from "@/hooks/queries";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function NewAddressScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
-  const primaryColor = Colors[colorScheme].primary;
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const isDark = colorScheme === "dark";
 
   const createAddress = useCreateAddress();
@@ -135,11 +126,7 @@ export default function NewAddressScreen() {
                     label="Country"
                     placeholder="Enter country"
                   />
-                  <FormField
-                    name="isPrimary"
-                    type="switch"
-                    label="Set as Primary Address"
-                  />
+                  <FormField name="isPrimary" type="switch" label="Set as Primary Address" />
                 </ScrollView>
 
                 <View style={styles.footer}>

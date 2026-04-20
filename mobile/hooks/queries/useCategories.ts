@@ -19,9 +19,7 @@ export const useCategories = () => {
     queryFn: async () => {
       const config = getQueryString({ populate });
       const url = `${apiRoutes.CATEGORIES}${config}`;
-      const response = await apiClient.get<ApiResponseInterface<CategoryInterface[]>>(
-        url
-      );
+      const response = await apiClient.get<ApiResponseInterface<CategoryInterface[]>>(url);
       return response.data.data;
     },
     ...QUERY_CONFIG.static,
@@ -38,9 +36,7 @@ export const useCategoriesForProducts = () => {
     queryFn: async () => {
       const config = getQueryString({ populate: ["attributes"] });
       const url = `${apiRoutes.CATEGORIES}${config}`;
-      const response = await apiClient.get<ApiResponseInterface<CategoryInterface[]>>(
-        url
-      );
+      const response = await apiClient.get<ApiResponseInterface<CategoryInterface[]>>(url);
       return response.data.data;
     },
     ...QUERY_CONFIG.static,
@@ -51,9 +47,7 @@ export const useCategoriesForProducts = () => {
  * Hook to fetch a single category by documentId
  * Uses detail config - single item view
  */
-export const useCategoryByDocumentId = (
-  documentId: CategoryInterface["documentId"]
-) => {
+export const useCategoryByDocumentId = (documentId: CategoryInterface["documentId"]) => {
   return useQuery<CategoryInterface>({
     queryKey: ["category", documentId],
     queryFn: async () => {
@@ -69,9 +63,7 @@ export const useCategoryByDocumentId = (
  * Hook to fetch a category with its attributes
  * Uses detail config - single item view
  */
-export const useCategoryWithAttributes = (
-  documentId: CategoryInterface["documentId"]
-) => {
+export const useCategoryWithAttributes = (documentId: CategoryInterface["documentId"]) => {
   return useQuery<CategoryInterface>({
     queryKey: ["category", documentId, "withAttributes"],
     queryFn: async () => {

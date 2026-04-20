@@ -33,10 +33,7 @@ export const useFeeConfig = () => {
 };
 
 // Calculate order summary with fees
-export const calculateOrderSummary = (
-  subtotal: number,
-  feeConfig?: FeeConfigInterface | null
-) => {
+export const calculateOrderSummary = (subtotal: number, feeConfig?: FeeConfigInterface | null) => {
   const platformFee = feeConfig?.platformFee || 0;
   const packagingFee = feeConfig?.packagingFee || 0;
   let deliveryFee = feeConfig?.deliveryFee || 0;
@@ -88,7 +85,8 @@ export const useCheckout = () => {
 
     onError: (error: any) => {
       const errorData = error?.response?.data || error;
-      const message = errorData?.message || errorData?.error?.message || "Checkout failed. Please try again.";
+      const message =
+        errorData?.message || errorData?.error?.message || "Checkout failed. Please try again.";
 
       // Special handling for out of stock
       if (errorData?.outOfStockItems) {

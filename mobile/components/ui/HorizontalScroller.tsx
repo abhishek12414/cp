@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 
 interface HorizontalScrollerProps {
   children: React.ReactNode;
@@ -18,10 +18,7 @@ export const HorizontalScroller: React.FC<HorizontalScrollerProps> = ({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[
-        styles.row,
-        { gap, paddingHorizontal: contentPaddingHorizontal },
-      ]}
+      contentContainerStyle={[styles.row, { gap, paddingHorizontal: contentPaddingHorizontal }]}
       style={style}
     >
       {children}

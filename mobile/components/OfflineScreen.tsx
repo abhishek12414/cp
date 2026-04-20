@@ -13,9 +13,7 @@ interface OfflineScreenProps {
 
 const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   return (
@@ -25,13 +23,14 @@ const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
           <View style={styles.iconContainer}>
             <Text style={styles.iconText}>📡</Text>
           </View>
-          
+
           <Text variant="headlineMedium" style={styles.title}>
             You&apos;re Offline
           </Text>
-          
+
           <Text variant="bodyLarge" style={styles.subtitle}>
-            It seems you&apos;ve lost your internet connection. Please check your network settings and try again.
+            It seems you&apos;ve lost your internet connection. Please check your network settings
+            and try again.
           </Text>
 
           <Button
@@ -47,7 +46,7 @@ const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
       </SafeAreaView>
     </ThemedView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

@@ -11,19 +11,9 @@ interface ServiceCardProps {
   onPress?: (id: string) => void;
 }
 
-export const ServiceCard: React.FC<ServiceCardProps> = ({
-  id,
-  icon,
-  title,
-  subtitle,
-  onPress,
-}) => {
+export const ServiceCard: React.FC<ServiceCardProps> = ({ id, icon, title, subtitle, onPress }) => {
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={() => onPress?.(id)}
-      activeOpacity={0.85}
-    >
+    <TouchableOpacity style={styles.container} onPress={() => onPress?.(id)} activeOpacity={0.85}>
       <View style={styles.iconWrap}>
         <Ionicons name={icon as any} size={22} color="#007AFF" />
       </View>

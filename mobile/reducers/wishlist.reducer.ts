@@ -26,9 +26,7 @@ const wishlistSlice = createSlice({
   reducers: {
     addToWishlist: (state, action: PayloadAction<Omit<WishlistItem, "id">>) => {
       const { productId, name, price, image } = action.payload;
-      const existingItem = state.items.find(
-        (item) => item.productId === productId
-      );
+      const existingItem = state.items.find((item) => item.productId === productId);
 
       if (!existingItem) {
         const id = Date.now().toString();
@@ -42,9 +40,7 @@ const wishlistSlice = createSlice({
       }
     },
     removeFromWishlist: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter(
-        (item) => item.productId !== action.payload
-      );
+      state.items = state.items.filter((item) => item.productId !== action.payload);
     },
     clearWishlist: (state) => {
       state.items = [];

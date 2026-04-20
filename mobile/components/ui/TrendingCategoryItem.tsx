@@ -21,11 +21,7 @@ export const TrendingCategoryItem: React.FC<TrendingCategoryItemProps> = ({
   onPress,
 }) => {
   return (
-    <TouchableOpacity
-      style={styles.container}
-      activeOpacity={0.85}
-      onPress={() => onPress?.(id)}
-    >
+    <TouchableOpacity style={styles.container} activeOpacity={0.85} onPress={() => onPress?.(id)}>
       <View style={styles.left}>
         <View style={styles.iconWrap}>
           <Ionicons name={icon as any} size={18} color="#007AFF" />

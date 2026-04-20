@@ -14,13 +14,11 @@ import { ProductInterface } from "@/interface";
 
 export default function WishlistScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   const { data: wishlistItems = [], isLoading } = useWishlist();
-  const toggleWishlist = useToggleWishlist();
+  useToggleWishlist();
 
   const handleGoBack = () => {
     router.back();
@@ -74,10 +72,7 @@ export default function WishlistScreen() {
             <Text variant="bodyMedium" style={styles.emptySubtitle}>
               Start adding products you love!
             </Text>
-            <TouchableOpacity
-              style={styles.shopNowButton}
-              onPress={() => router.push("/(tabs)")}
-            >
+            <TouchableOpacity style={styles.shopNowButton} onPress={() => router.push("/(tabs)")}>
               <Text style={styles.shopNowText}>Shop Now</Text>
             </TouchableOpacity>
           </View>

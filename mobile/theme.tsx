@@ -1,13 +1,13 @@
 import {
-  MD3LightTheme,
-  MD3DarkTheme,
-  adaptNavigationTheme,
-  configureFonts,
-} from "react-native-paper";
-import {
   DarkTheme as NavigationDarkTheme,
   DefaultTheme as NavigationDefaultTheme,
 } from "@react-navigation/native";
+import {
+  MD3DarkTheme,
+  MD3LightTheme,
+  adaptNavigationTheme,
+  configureFonts,
+} from "react-native-paper";
 import { Colors } from "./constants/Colors";
 
 // Adapt navigation theme

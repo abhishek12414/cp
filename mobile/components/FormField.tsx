@@ -7,14 +7,13 @@ import {
   Switch,
   View,
   Modal,
-  ScrollView,
   TouchableOpacity,
   FlatList,
 } from "react-native";
 import { useField, useFormikContext } from "formik";
 import { Button } from "react-native-paper";
 
-import ImagePicker from "./ImagePicker";
+import { ImagePicker } from "./ImagePicker";
 
 /**
  * Supported field types for FormField component
@@ -195,9 +194,7 @@ export function FormField({
   const filteredOptions = useMemo(() => {
     if (!searchQuery || !searchable) return options;
     const query = searchQuery.toLowerCase();
-    return options.filter((option) =>
-      option.label.toLowerCase().includes(query)
-    );
+    return options.filter((option) => option.label.toLowerCase().includes(query));
   }, [options, searchQuery, searchable]);
 
   // Get selected option(s) label(s)
@@ -211,7 +208,7 @@ export function FormField({
         .map((opt) => opt.label);
       return selectedLabels.join(", ") || placeholder || "Select options";
     }
-    
+
     const selected = options.find((opt) => opt.value === fieldValue);
     return selected?.label || placeholder || "Select an option";
   };
@@ -233,11 +230,7 @@ export function FormField({
 
     return (
       <TextInput
-        style={[
-          styles.input,
-          isMultiline && styles.multiline,
-          hasError && styles.inputError,
-        ]}
+        style={[styles.input, isMultiline && styles.multiline, hasError && styles.inputError]}
         placeholder={placeholder}
         value={fieldValue?.toString() || ""}
         onChangeText={(text) => helpers.setValue(text)}
@@ -354,10 +347,7 @@ export function FormField({
         disabled={disabled || isSubmitting}
       >
         <Text
-          style={[
-            styles.dropdownButtonText,
-            !fieldValue && styles.dropdownPlaceholder,
-          ]}
+          style={[styles.dropdownButtonText, !fieldValue && styles.dropdownPlaceholder]}
           numberOfLines={1}
         >
           {getSelectedLabel()}
@@ -398,7 +388,7 @@ export function FormField({
             {type === "multiselect" && (
               <View style={styles.multiSelectInfo}>
                 <Text style={styles.multiSelectInfoText}>
-                  {(Array.isArray(fieldValue) ? fieldValue.length : 0)} selected
+                  {Array.isArray(fieldValue) ? fieldValue.length : 0} selected
                 </Text>
                 <TouchableOpacity
                   onPress={() => {
@@ -431,14 +421,10 @@ export function FormField({
                   >
                     {item.label}
                   </Text>
-                  {isSelected(item.value) && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
+                  {isSelected(item.value) && <Text style={styles.checkmark}>✓</Text>}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={
-                <Text style={styles.noResultsText}>No results found</Text>
-              }
+              ListEmptyComponent={<Text style={styles.noResultsText}>No results found</Text>}
             />
 
             {type === "multiselect" && (

@@ -92,25 +92,20 @@ const uploadApi = {
 
   /**
    * Fetch uploaded files from Strapi media library with server-side pagination
-   * 
+   *
    * IMPORTANT: This uses server-side pagination to avoid fetching all files at once.
    * Strapi 5 supports pagination via query parameters.
-   * 
+   *
    * @param params - Pagination and filter parameters
    * @returns Promise with paginated list of uploaded files
    */
   getFiles: async (params: GetFilesParams = {}): Promise<UploadFilesResponse> => {
-    const {
-      page = 1,
-      pageSize = 20,
-      sort = "createdAt:desc",
-      filters,
-    } = params;
+    const { page = 1, pageSize = 20, sort = "createdAt:desc", filters } = params;
 
     // Build query parameters for Strapi REST API pagination
     const queryParams = new URLSearchParams();
     queryParams.append("sort", sort);
-    
+
     // Add pagination params (Strapi 5 format)
     queryParams.append("pagination[page]", String(page));
     queryParams.append("pagination[pageSize]", String(pageSize));
@@ -129,7 +124,7 @@ const uploadApi = {
     );
 
     const files = response.data || [];
-    
+
     // Get pagination info from response headers or fallback
     const totalCount = parseInt(response.headers["x-total-count"] || "0", 10);
     const totalPages = Math.ceil(totalCount / pageSize) || 1;

@@ -9,18 +9,16 @@ import { Colors } from "@/constants/Colors";
 
 /**
  * Placeholder screen for managing orders.
- * 
+ *
  * Route: /admin/orders
- * 
+ *
  * Backend: Uses Strapi's api::order.order and api::order-item.order-item content types (see server/src/api/order).
  * Future: List orders, status updates, fulfillment, user links.
  */
 
 export default function ManageOrdersScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   return (
@@ -30,20 +28,18 @@ export default function ManageOrdersScreen() {
           and the custom Stack header (from admin layout, where headerShown: true).
           This ensures content doesn't get cut off by system UI elements like notches,
           home indicator, or header inset. */}
-      <SafeAreaView 
+      <SafeAreaView
         style={styles.safeArea}
         // Exclude top since header + StatusBar handle it; include others for bottom/sides
-        edges={['bottom', 'left', 'right']}
+        edges={["bottom", "left", "right"]}
       >
         <View style={styles.content}>
-          <Text style={[styles.title, { color: primaryColor }]}>
-            Manage Orders
-          </Text>
+          <Text style={[styles.title, { color: primaryColor }]}>Manage Orders</Text>
           <Text style={styles.placeholder}>
             This is a placeholder screen for order management.
             {"\n\n"}
-            Features to implement: List orders (filter by status/user), view details, 
-            update status, totals/shipping.
+            Features to implement: List orders (filter by status/user), view details, update status,
+            totals/shipping.
             {"\n\n"}
             Navigate back via header or add UI controls later.
           </Text>

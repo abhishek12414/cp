@@ -1,22 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import {
-  Dimensions,
-  FlatList,
-  ScrollView,
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  LayoutChangeEvent,
-} from "react-native";
-import {
-  ActivityIndicator,
-  IconButton,
-  Text,
-  Chip,
-  Surface,
-} from "react-native-paper";
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { Dimensions, FlatList, ScrollView, StyleSheet, View, TouchableOpacity } from "react-native";
+import { ActivityIndicator, IconButton, Text, Surface } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 
@@ -34,44 +20,31 @@ import { getImageUrl, extractMediaUrl } from "@/helpers/image";
 import { CategoryInterface, ProductInterface } from "@/interface";
 
 const { width } = Dimensions.get("window");
-const CATEGORY_TAB_HEIGHT = 48;
 const GALLERY_HEIGHT = 280;
 
 export default function BrandScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const isDark = colorScheme === "dark";
 
   // Fetch brand data
   const { data: brand, isLoading: isLoadingBrand } = useBrandByDocumentId(id || "");
-  const { data: featuredProducts, isLoading: isLoadingFeatured } =
-    useBrandFeaturedProducts(id || "");
+  const { data: featuredProducts } = useBrandFeaturedProducts(id || "");
   const { data: categories, isLoading: isLoadingCategories } = useBrandCategories(id || "");
 
   // State for selected category and expanded sections
-  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
+  const [selectedCategoryIndex] = useState(0);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [loadedCategoryProducts, setLoadedCategoryProducts] = useState<Set<string>>(new Set());
-
-  // Track section visibility for lazy loading
-  const [galleryVisible, setGalleryVisible] = useState(true);
-  const categoryScrollRef = useRef<ScrollView>(null);
 
   // Get currently selected category
   const selectedCategory = categories?.[selectedCategoryIndex];
 
   // Lazy load products for selected category
-  const { data: categoryProducts, isLoading: isLoadingCategoryProducts } =
-    useBrandCategoryProducts(
-      id || "",
-      selectedCategory?.documentId || "",
-      !!selectedCategory
-    );
+  useBrandCategoryProducts(id || "", selectedCategory?.documentId || "", !!selectedCategory);
 
   // Pre-load products for categories that are expanded
   useEffect(() => {
@@ -82,7 +55,7 @@ export default function BrandScreen() {
         setLoadedCategoryProducts(new Set([categories[0].documentId]));
       }
     }
-  }, [categories]);
+  }, [categories, expandedCategories.size]);
 
   // Gallery images from featured products
   const galleryImages = useMemo(() => {
@@ -118,19 +91,6 @@ export default function BrandScreen() {
 
   const handleAddToWishlist = (productId: string) => {
     console.log("Add to wishlist:", productId);
-  };
-
-  const handleCategoryPress = (index: number) => {
-    setSelectedCategoryIndex(index);
-    categoryScrollRef.current?.scrollTo({
-      x: index * (width - 32),
-      animated: true,
-    });
-    // Mark this category's products as needing to be loaded
-    const categoryDocId = categories?.[index]?.documentId;
-    if (categoryDocId) {
-      setLoadedCategoryProducts((prev) => new Set([...prev, categoryDocId]));
-    }
   };
 
   const toggleCategoryExpand = (categoryDocId: string) => {
@@ -193,16 +153,8 @@ export default function BrandScreen() {
             )}
           </View>
           <View style={styles.headerActions}>
-            <IconButton
-              icon="share-variant"
-              size={22}
-              iconColor={isDark ? "#fff" : "#000"}
-            />
-            <IconButton
-              icon="heart-outline"
-              size={22}
-              iconColor={isDark ? "#fff" : "#000"}
-            />
+            <IconButton icon="share-variant" size={22} iconColor={isDark ? "#fff" : "#000"} />
+            <IconButton icon="heart-outline" size={22} iconColor={isDark ? "#fff" : "#000"} />
           </View>
         </View>
 
@@ -227,11 +179,7 @@ export default function BrandScreen() {
                   {brand.name}
                 </Text>
                 {brand.description && (
-                  <Text
-                    variant="bodyMedium"
-                    style={styles.brandDescription}
-                    numberOfLines={2}
-                  >
+                  <Text variant="bodyMedium" style={styles.brandDescription} numberOfLines={2}>
                     {brand.description}
                   </Text>
                 )}
@@ -333,7 +281,7 @@ export default function BrandScreen() {
 
 // Gallery Carousel Component
 interface GalleryCarouselProps {
-  images: Array<{ id: string; image: string; product?: ProductInterface }>;
+  images: { id: string; image: string; product?: ProductInterface }[];
 }
 
 const GalleryCarousel = ({ images }: GalleryCarouselProps) => {
@@ -364,11 +312,7 @@ const GalleryCarousel = ({ images }: GalleryCarouselProps) => {
           setActiveIndex(index);
         }}
         renderItem={({ item }) => (
-          <Image
-            source={{ uri: item.image }}
-            style={styles.galleryImage}
-            contentFit="cover"
-          />
+          <Image source={{ uri: item.image }} style={styles.galleryImage} contentFit="cover" />
         )}
       />
       {images.length > 1 && (
@@ -424,11 +368,7 @@ const CategorySection = ({
       style={[styles.categoryCard, isDark && styles.categoryCardDark]}
       elevation={isExpanded ? 3 : 1}
     >
-      <TouchableOpacity
-        style={styles.categoryHeader}
-        onPress={onToggle}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={styles.categoryHeader} onPress={onToggle} activeOpacity={0.8}>
         <View style={styles.categoryHeaderLeft}>
           {categoryImageUri ? (
             <Image
@@ -438,9 +378,7 @@ const CategorySection = ({
             />
           ) : (
             <View style={[styles.categoryImagePlaceholder, { backgroundColor: primaryColor }]}>
-              <Text style={styles.categoryImagePlaceholderText}>
-                {category.name.charAt(0)}
-              </Text>
+              <Text style={styles.categoryImagePlaceholderText}>{category.name.charAt(0)}</Text>
             </View>
           )}
           <View style={styles.categoryInfo}>

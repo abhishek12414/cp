@@ -15,11 +15,7 @@ export function CategoryCard({ data, onPress }: CategoryCardProps) {
   const imageUri = getImageUrl(data.image?.url || "");
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={() => onPress(data)}
-      activeOpacity={0.8}
-    >
+    <TouchableOpacity style={styles.container} onPress={() => onPress(data)} activeOpacity={0.8}>
       <View style={styles.imageWrapper}>
         {imageUri ? (
           <Image

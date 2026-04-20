@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View, Alert } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { IconButton, Text } from "react-native-paper";
 import { Image } from "expo-image";
 
@@ -17,12 +17,7 @@ export type ProductCardProps = {
   onAddToWishlist?: (id: string) => void;
 };
 
-const ProductCard = ({
-  data,
-  onPress,
-  onAddToCart,
-  onAddToWishlist,
-}: ProductCardProps) => {
+const ProductCard = ({ data, onPress, onAddToCart, onAddToWishlist }: ProductCardProps) => {
   const {
     documentId,
     name,
@@ -39,12 +34,11 @@ const ProductCard = ({
   } = data;
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  
+
   const productImages = images || [];
   const hasMultipleImages = productImages.length > 1;
   const discountPrice = comparePrice;
-  const hasDiscount =
-    discountPrice !== undefined && discountPrice < price && discountPrice > 0;
+  const hasDiscount = discountPrice !== undefined && discountPrice < price && discountPrice > 0;
   const currentStock = stockQuantity ?? stock ?? 0;
   const isLowStock = currentStock > 0 && currentStock <= (lowStockThreshold || 5);
   const isOutOfStock = currentStock === 0;
@@ -65,17 +59,20 @@ const ProductCard = ({
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
-    
+
     // Add directly with quantity 1
-    addToCartMutation.mutate({
-      product: documentId,
-      quantity: 1,
-      productData: data,
-    }, {
-      onSuccess: () => {
-        onAddToCart?.(documentId);
+    addToCartMutation.mutate(
+      {
+        product: documentId,
+        quantity: 1,
+        productData: data,
+      },
+      {
+        onSuccess: () => {
+          onAddToCart?.(documentId);
+        },
       }
-    });
+    );
   };
 
   const handleCardPress = () => {
@@ -94,11 +91,7 @@ const ProductCard = ({
   const isAddingToCart = addToCartMutation.isPending;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={handleCardPress}
-      activeOpacity={0.9}
-    >
+    <TouchableOpacity style={styles.card} onPress={handleCardPress} activeOpacity={0.9}>
       <View style={styles.imageContainer}>
         {productImages.length > 0 ? (
           <>
@@ -166,26 +159,22 @@ const ProductCard = ({
           <Text style={styles.outOfStockText}>Out of Stock</Text>
         </View>
       )}
-      
+
       {/* Wishlist Button - stops propagation */}
       <TouchableOpacity
         style={styles.wishlistBtn}
         onPress={handleWishlistPress}
         activeOpacity={0.7}
       >
-        <IconButton 
-          icon={isInWishlist ? "heart" : "heart-outline"} 
-          iconColor={isInWishlist ? "#FF6B6B" : "#fff"} 
-          size={20} 
+        <IconButton
+          icon={isInWishlist ? "heart" : "heart-outline"}
+          iconColor={isInWishlist ? "#FF6B6B" : "#fff"}
+          size={20}
         />
       </TouchableOpacity>
-      
+
       {/* Share Button - stops propagation */}
-      <TouchableOpacity
-        style={styles.shareBtn}
-        onPress={handleSharePress}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity style={styles.shareBtn} onPress={handleSharePress} activeOpacity={0.7}>
         <IconButton icon="share-variant" iconColor="#fff" size={20} />
       </TouchableOpacity>
 
@@ -203,40 +192,35 @@ const ProductCard = ({
         <View style={styles.priceRow}>
           {hasDiscount ? (
             <>
-              <Text style={styles.discountPriceText}>
-                ₹{discountPrice!.toFixed(0)}
-              </Text>
+              <Text style={styles.discountPriceText}>₹{discountPrice!.toFixed(0)}</Text>
               <Text style={styles.originalPrice}>₹{price.toFixed(0)}</Text>
             </>
           ) : (
             <Text style={styles.price}>₹{price.toFixed(0)}</Text>
           )}
         </View>
-        
+
         {/* In Cart Indicator */}
         {isInCart && (
           <View style={styles.inCartIndicator}>
             <Text style={styles.inCartText}>{cartQuantity} in cart</Text>
           </View>
         )}
-        
+
         {/* Add to Cart Button - stops propagation */}
         <TouchableOpacity
-          style={[
-            styles.addToCartButton,
-            isOutOfStock && styles.outOfStockButton,
-          ]}
+          style={[styles.addToCartButton, isOutOfStock && styles.outOfStockButton]}
           onPress={handleAddToCart}
           activeOpacity={0.8}
           disabled={isOutOfStock || isAddingToCart}
         >
           <Text style={styles.buttonText}>
-            {isAddingToCart 
-              ? "Adding..." 
-              : isOutOfStock 
-                ? "Out of Stock" 
-                : isInCart 
-                  ? "Add More" 
+            {isAddingToCart
+              ? "Adding..."
+              : isOutOfStock
+                ? "Out of Stock"
+                : isInCart
+                  ? "Add More"
                   : "Add to Cart"}
           </Text>
         </TouchableOpacity>

@@ -1,4 +1,4 @@
-export type UploadOrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
+export type UploadOrderStatus = "pending" | "processing" | "completed" | "cancelled";
 
 export interface UploadOrderInterface {
   id: number;

@@ -10,15 +10,10 @@ type HeaderSearchProps = {
   onSearch?: (query: string) => void;
 };
 
-export function HeaderSearch({
-  placeholder = "Search products...",
-  onSearch,
-}: HeaderSearchProps) {
+export function HeaderSearch({ placeholder = "Search products...", onSearch }: HeaderSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const router = useRouter();
 
   const handleSearch = () => {

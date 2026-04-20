@@ -23,9 +23,7 @@ export interface CategoryFilters {
 }
 
 // Helper to clean payload – omit undefined fields to avoid Strapi validation errors
-const cleanCategoryData = (
-  data: CategoryInput | Partial<CategoryInput>
-): Record<string, any> => {
+const cleanCategoryData = (data: CategoryInput | Partial<CategoryInput>): Record<string, any> => {
   const cleaned: Record<string, any> = {};
   Object.entries(data).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -68,10 +66,9 @@ export const categoryApi = {
   // PUT /api/categories/{documentId}
   updateCategory: (documentId: string, data: Partial<CategoryInput>) => {
     const cleaned = cleanCategoryData(data);
-    return apiClient.put<ApiResponseInterface<CategoryInterface>>(
-      apiRoutes.CATEGORY(documentId),
-      { data: cleaned }
-    );
+    return apiClient.put<ApiResponseInterface<CategoryInterface>>(apiRoutes.CATEGORY(documentId), {
+      data: cleaned,
+    });
   },
 
   // DELETE /api/categories/{documentId}

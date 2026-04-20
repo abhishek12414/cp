@@ -13,9 +13,7 @@ interface LoadingScreenProps {
 
 export function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   return (

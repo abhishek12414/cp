@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  StyleSheet,
-  View,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, View, ScrollView, TouchableOpacity } from "react-native";
 import { Text, IconButton, Surface, ActivityIndicator, Chip } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -121,9 +116,7 @@ interface UploadOrderCardProps {
 
 const UploadOrderCard = ({ order, onPress, isDark }: UploadOrderCardProps) => {
   const fileCount = order.files?.length || 0;
-  const thumbnailUrl = order.files?.[0]?.url
-    ? `${API_URL}${order.files[0].url}`
-    : null;
+  const thumbnailUrl = order.files?.[0]?.url ? `${API_URL}${order.files[0].url}` : null;
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>

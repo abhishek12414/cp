@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  Pressable,
-  Alert,
-} from "react-native";
-import { Button, IconButton, ActivityIndicator } from "react-native-paper";
+import { View, Text, StyleSheet, Modal, Pressable } from "react-native";
+import { Button, IconButton } from "react-native-paper";
 import { Image } from "expo-image";
 
 import { ProductInterface } from "@/interface";
@@ -45,9 +37,7 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({
 
   const stockQuantity = product.stockQuantity ?? product.stock ?? 0;
   const maxQuantity = Math.min(stockQuantity, 99);
-  const productImage = product.images?.[0]?.url
-    ? getImageUrl(product.images[0].url)
-    : null;
+  const productImage = product.images?.[0]?.url ? getImageUrl(product.images[0].url) : null;
 
   const handleQuantityChange = (delta: number) => {
     const newQuantity = quantity + delta;
@@ -72,25 +62,20 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({
           productData: product,
         });
       }
-      
+
       onSuccess?.();
       onClose();
-    } catch (error) {
+    } catch {
       // Error is handled in the mutation hook
     }
   };
 
   const isLoading = addToCart.isPending || updateCartItem.isPending;
-  const currentCartQuantity = isInCart ? (cartItem?.quantity || 0) : 0;
+  const currentCartQuantity = isInCart ? cartItem?.quantity || 0 : 0;
   const totalAfterAdd = currentCartQuantity + quantity;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.modalContainer} onPress={() => {}}>
           {/* Header */}
@@ -112,18 +97,12 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({
               <Text style={styles.productName} numberOfLines={2}>
                 {product.name}
               </Text>
-              {product.brand && (
-                <Text style={styles.brandName}>{product.brand.name}</Text>
-              )}
+              {product.brand && <Text style={styles.brandName}>{product.brand.name}</Text>}
               <Text style={styles.price}>₹{product.price.toFixed(0)}</Text>
               {stockQuantity <= 10 && stockQuantity > 0 && (
-                <Text style={styles.lowStock}>
-                  Only {stockQuantity} left in stock
-                </Text>
+                <Text style={styles.lowStock}>Only {stockQuantity} left in stock</Text>
               )}
-              {stockQuantity === 0 && (
-                <Text style={styles.outOfStock}>Out of Stock</Text>
-              )}
+              {stockQuantity === 0 && <Text style={styles.outOfStock}>Out of Stock</Text>}
             </View>
           </View>
 
@@ -156,7 +135,8 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({
                 You already have {currentCartQuantity} in cart
               </Text>
               <Text style={styles.cartTotalText}>
-                Total after adding: {totalAfterAdd} items (₹{(product.price * totalAfterAdd).toFixed(0)})
+                Total after adding: {totalAfterAdd} items (₹
+                {(product.price * totalAfterAdd).toFixed(0)})
               </Text>
             </View>
           )}
@@ -164,9 +144,7 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({
           {/* Total */}
           <View style={styles.totalSection}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalAmount}>
-              ₹{(product.price * quantity).toFixed(0)}
-            </Text>
+            <Text style={styles.totalAmount}>₹{(product.price * quantity).toFixed(0)}</Text>
           </View>
 
           {/* Actions */}
@@ -187,11 +165,7 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({
               disabled={stockQuantity === 0 || isLoading}
               loading={isLoading}
             >
-              {isLoading 
-                ? "Adding..." 
-                : isInCart 
-                  ? `Add ${quantity} More` 
-                  : "Add to Cart"}
+              {isLoading ? "Adding..." : isInCart ? `Add ${quantity} More` : "Add to Cart"}
             </Button>
           </View>
         </Pressable>

@@ -59,7 +59,7 @@ const SESSION_ID_KEY = "analytics_session_id";
 
 /**
  * Analytics Service
- * 
+ *
  * Provides event tracking with offline support:
  * - Queues events locally
  * - Flushes to server when online
@@ -221,7 +221,7 @@ class AnalyticsService {
     if (this.events.length === 0) return;
 
     const eventsToSend = [...this.events];
-    
+
     try {
       // In a real implementation, send to your analytics endpoint
       // For now, we'll just log and clear
@@ -238,7 +238,7 @@ class AnalyticsService {
     } catch (error) {
       // On failure, events remain in queue for next flush
       console.error("[Analytics] Flush failed:", error);
-      
+
       // Restore events on failure
       this.events = eventsToSend;
     }

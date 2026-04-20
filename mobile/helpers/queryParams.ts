@@ -5,9 +5,7 @@ import qs from "qs";
  */
 export function generateQueryParams(params: Record<string, unknown>): string {
   return Object.entries(params)
-    .filter(
-      ([, value]) => value !== undefined && value !== null && value !== ""
-    )
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
     .map(([key, value]) => {
       // Handle arrays and objects by JSON.stringify
       const encodedValue = encodeURIComponent(

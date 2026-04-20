@@ -14,9 +14,7 @@ import { CategoryInterface } from "@/interface";
 
 export default function CategoriesScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
 
   // Fetch categories from API
   const { data: categoriesData, isLoading, refetch, isRefetching } = useCategories();
@@ -40,11 +38,7 @@ export default function CategoriesScreen() {
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator
-              animating
-              size="large"
-              color={Colors[colorScheme].primary}
-            />
+            <ActivityIndicator animating size="large" color={Colors[colorScheme].primary} />
             <Text variant="bodyMedium" style={styles.loadingText}>
               Loading categories...
             </Text>
@@ -65,10 +59,7 @@ export default function CategoriesScreen() {
             <View style={styles.categoriesGrid}>
               {categoriesData?.map((category) => (
                 <View key={category.documentId} style={styles.categoryWrapper}>
-                  <CategoryCard
-                    data={category}
-                    onPress={handleCategoryPress}
-                  />
+                  <CategoryCard data={category} onPress={handleCategoryPress} />
                 </View>
               ))}
             </View>

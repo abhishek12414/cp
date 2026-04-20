@@ -15,7 +15,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ServiceCard } from "@/components/ui/ServiceCard";
 import { useBottomTabOverflow } from "@/components/ui/TabBarBackground";
 import { TrendingCategoryItem } from "@/components/ui/TrendingCategoryItem";
-import CartIcon from "@/components/ui/CartIcon";
+import { CartIcon } from "@/components/ui/CartIcon";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
@@ -27,15 +27,12 @@ import { services, trendingCategories } from "@/mock/products";
 
 export default function HomeScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const bottomTabOverflow = useBottomTabOverflow();
 
   // React Query hooks would replace these when connecting to real API
-  const { data: categoriesData, isLoading: isLoadingCategories } =
-    useCategories();
+  const { data: categoriesData, isLoading: isLoadingCategories } = useCategories();
 
   const { data: brandsData, isLoading: isLoadingBrands } = useBrand();
 
@@ -95,28 +92,22 @@ export default function HomeScreen() {
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: bottomTabOverflow + 24 },
-          ]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomTabOverflow + 24 }]}
         >
           {/* Banner Carousel */}
           <BannerCarousel
             banners={[
               {
                 id: "b1",
-                image:
-                  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200",
+                image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200",
               },
               {
                 id: "b2",
-                image:
-                  "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1200",
+                image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1200",
               },
               {
                 id: "b3",
-                image:
-                  "https://images.unsplash.com/photo-1617043786394-f977fa12eddf?w=1200",
+                image: "https://images.unsplash.com/photo-1617043786394-f977fa12eddf?w=1200",
               },
             ]}
             height={150}
@@ -129,11 +120,7 @@ export default function HomeScreen() {
           ) : (
             <HorizontalScroller>
               {categoriesData?.slice(0, 8).map((data) => (
-                <CategoryCard
-                  key={data.id}
-                  data={data}
-                  onPress={handleCategoryPress}
-                />
+                <CategoryCard key={data.id} data={data} onPress={handleCategoryPress} />
               ))}
             </HorizontalScroller>
           )}
@@ -145,11 +132,7 @@ export default function HomeScreen() {
           ) : (
             <HorizontalScroller>
               {brandsData?.map((brand) => (
-                <BrandCard
-                  key={brand.id}
-                  data={brand}
-                  onPress={handleBrandPress}
-                />
+                <BrandCard key={brand.id} data={brand} onPress={handleBrandPress} />
               ))}
             </HorizontalScroller>
           )}

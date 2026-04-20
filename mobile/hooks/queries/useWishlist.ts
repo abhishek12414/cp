@@ -22,10 +22,9 @@ export const useWishlist = () => {
  */
 export const useIsInWishlist = (productId: string | number) => {
   const { data: wishlistItems = [] } = useWishlist();
-  
+
   return wishlistItems.some(
-    (item) => item.product?.id === Number(productId) || 
-               item.product?.documentId === productId
+    (item) => item.product?.id === Number(productId) || item.product?.documentId === productId
   );
 };
 
@@ -69,8 +68,7 @@ export const useRemoveFromWishlist = () => {
 export const useWishlistItemId = (productId: string | number): number | null => {
   const { data: wishlistItems = [] } = useWishlist();
   const item = wishlistItems.find(
-    (item) => item.product?.id === Number(productId) || 
-               item.product?.documentId === productId
+    (item) => item.product?.id === Number(productId) || item.product?.documentId === productId
   );
   return item?.id || null;
 };

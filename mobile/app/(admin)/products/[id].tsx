@@ -17,23 +17,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "react-native-paper";
 import { Formik } from "formik";
 import { Image } from "expo-image";
+import * as ExpoImagePicker from "expo-image-picker";
 
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
-import FormField from "@/components/FormField";
-import {
-  useBrand,
-  useCategoriesForProducts,
-  useProductByDocumentId,
-} from "@/hooks/queries";
-import productApi from "@/apis/product.api";
+import { FormField } from "@/components/FormField";
+import { useBrand, useCategoriesForProducts, useProductByDocumentId } from "@/hooks/queries";
+import { productApi } from "@/apis/product.api";
 import uploadApi from "@/apis/upload.api";
-import {
-  AttributeInterface,
-  ProductAttributeInterface,
-  ProductInput,
-} from "@/interface";
+import { AttributeInterface, ProductAttributeInterface, ProductInput } from "@/interface";
 import { getImageUrl } from "@/helpers/image";
 import { generateSlug } from "@/helpers/dataFormatter";
 import {
@@ -62,30 +55,17 @@ interface SelectDropdownProps {
   placeholder: string;
 }
 
-function SelectDropdown({
-  options,
-  value,
-  onChange,
-  placeholder,
-}: SelectDropdownProps) {
+function SelectDropdown({ options, value, onChange, placeholder }: SelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const displayValue = value || placeholder;
 
   return (
     <View style={styles.dropdownContainer}>
       <TouchableOpacity
-        style={[
-          styles.dropdownButton,
-          value ? styles.dropdownButtonSelected : null,
-        ]}
+        style={[styles.dropdownButton, value ? styles.dropdownButtonSelected : null]}
         onPress={() => setIsOpen(true)}
       >
-        <Text
-          style={[
-            styles.dropdownButtonText,
-            !value ? styles.dropdownPlaceholder : null,
-          ]}
-        >
+        <Text style={[styles.dropdownButtonText, !value ? styles.dropdownPlaceholder : null]}>
           {displayValue}
         </Text>
         <Text style={styles.dropdownArrow}>▼</Text>
@@ -119,9 +99,7 @@ function SelectDropdown({
                   <Text
                     style={[
                       styles.dropdownOptionText,
-                      value === option
-                        ? styles.dropdownOptionTextSelected
-                        : null,
+                      value === option ? styles.dropdownOptionTextSelected : null,
                     ]}
                   >
                     {option}
@@ -142,28 +120,22 @@ export default function ProductFormScreen() {
   const isEdit = id !== "new";
 
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   const queryClient = useQueryClient();
 
   const { data: categories = [] } = useCategoriesForProducts();
   const { data: brands = [] } = useBrand();
-  const { data: product, isLoading: isLoadingProduct } = useProductByDocumentId(
-    isEdit ? id : ""
-  );
+  const { data: product, isLoading: isLoadingProduct } = useProductByDocumentId(isEdit ? id : "");
 
   // State for images
   const [imageList, setImageList] = useState<ImageWithMeta[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // State for attribute values
-  const [attributeValues, setAttributeValues] = useState<
-    Record<number, AttributeValueState>
-  >({});
-  const [categoryAttributeCache, setCategoryAttributeCache] = useState<
+  const [attributeValues, setAttributeValues] = useState<Record<number, AttributeValueState>>({});
+  const [, setCategoryAttributeCache] = useState<
     Record<string, Record<number, AttributeValueState>>
   >({});
 
@@ -188,19 +160,16 @@ export default function ProductFormScreen() {
   useEffect(() => {
     if (isEdit && product) {
       if (product.images?.length) {
-        const existingImages: ImageWithMeta[] = product.images.map(
-          (imageItem) => ({
-            uri: getImageUrl(imageItem.url) || "",
-            id: imageItem.id,
-            isExisting: true,
-          })
-        );
+        const existingImages: ImageWithMeta[] = product.images.map((imageItem) => ({
+          uri: getImageUrl(imageItem.url) || "",
+          id: imageItem.id,
+          isExisting: true,
+        }));
         setImageList(existingImages);
       }
 
       // Load existing attribute values
-      const rawAttributeValues =
-        product.attributeValues || product.productAttributes || [];
+      const rawAttributeValues = product.attributeValues || product.productAttributes || [];
       const existingAttributes = Array.isArray(rawAttributeValues)
         ? rawAttributeValues
         : (rawAttributeValues as any)?.data || [];
@@ -258,13 +227,8 @@ export default function ProductFormScreen() {
   };
 
   // Save attribute values to backend
-  const saveAttributeValues = async (
-    productId: number,
-    categoryId: string | null
-  ) => {
-    const selectedCategory = categoryId
-      ? getSelectedCategory(categoryId)
-      : null;
+  const saveAttributeValues = async (productId: number, categoryId: string | null) => {
+    const selectedCategory = categoryId ? getSelectedCategory(categoryId) : null;
     const attributes = selectedCategory?.attributes || [];
     const requests = attributes
       .map((attribute) => {
@@ -313,10 +277,7 @@ export default function ProductFormScreen() {
       };
 
       if (isEdit && product?.id) {
-        const attributeValueIds = await saveAttributeValues(
-          product.id,
-          values.category
-        );
+        const attributeValueIds = await saveAttributeValues(product.id, values.category);
         return productApi.updateProduct(id, {
           ...payload,
           attributeValues: attributeValueIds,
@@ -326,10 +287,7 @@ export default function ProductFormScreen() {
       const created = await productApi.createProduct(payload);
       const createdProduct = created?.data?.data;
       if (createdProduct?.id && createdProduct?.documentId) {
-        const attributeValueIds = await saveAttributeValues(
-          createdProduct.id,
-          values.category
-        );
+        const attributeValueIds = await saveAttributeValues(createdProduct.id, values.category);
         await productApi.updateProduct(createdProduct.documentId, {
           attributeValues: attributeValueIds,
         });
@@ -341,10 +299,7 @@ export default function ProductFormScreen() {
       if (isEdit) {
         queryClient.invalidateQueries({ queryKey: ["product", id] });
       }
-      Alert.alert(
-        "Success",
-        `Product ${isEdit ? "updated" : "created"} successfully.`
-      );
+      Alert.alert("Success", `Product ${isEdit ? "updated" : "created"} successfully.`);
       router.back();
     },
     onError: (err) => {
@@ -402,19 +357,14 @@ export default function ProductFormScreen() {
   // Handle image picker
   const handlePickImage = async () => {
     try {
-      const ImagePicker = require("expo-image-picker");
-      const permissionResult =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permissionResult = await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert(
-          "Permission required",
-          "Allow photo access for image upload."
-        );
+        Alert.alert("Permission required", "Allow photo access for image upload.");
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
+      const result = await ExpoImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: true,
         quality: 0.8,
@@ -442,20 +392,23 @@ export default function ProductFormScreen() {
           throw new Error("Upload failed: No file ID returned");
         }
 
-        setImageList((prev) => [
-          ...prev,
-          { uri, id: uploadedFileId, isExisting: false },
-        ]);
+        setImageList((prev) => [...prev, { uri, id: uploadedFileId, isExisting: false }]);
         Alert.alert("Success", "Image uploaded successfully.");
       } catch (error: any) {
         console.error("Image upload error:", error?.response?.data || error?.message || error);
-        Alert.alert("Error", error?.response?.data?.error?.message || "Failed to upload image. Try again.");
+        Alert.alert(
+          "Error",
+          error?.response?.data?.error?.message || "Failed to upload image. Try again."
+        );
       } finally {
         setIsUploadingImage(false);
       }
     } catch (error: any) {
       console.error("Image picker error:", error?.message || error);
-      Alert.alert("Error", error?.message || "Unable to open image picker. Please check app permissions.");
+      Alert.alert(
+        "Error",
+        error?.message || "Unable to open image picker. Please check app permissions."
+      );
     }
   };
 
@@ -472,10 +425,7 @@ export default function ProductFormScreen() {
     return (
       <ThemedView style={styles.container}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        <SafeAreaView
-          style={styles.safeArea}
-          edges={["bottom", "left", "right"]}
-        >
+        <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
           <View style={styles.center}>
             <Text>Loading product...</Text>
           </View>
@@ -523,21 +473,10 @@ export default function ProductFormScreen() {
                   />
 
                   {/* Price */}
-                  <FormField
-                    name="price"
-                    type="number"
-                    label="Price"
-                    placeholder="0.00"
-                    required
-                  />
+                  <FormField name="price" type="number" label="Price" placeholder="0.00" required />
 
                   {/* SKU */}
-                  <FormField
-                    name="sku"
-                    type="text"
-                    label="SKU"
-                    placeholder="SKU"
-                  />
+                  <FormField name="sku" type="text" label="SKU" placeholder="SKU" />
 
                   {/* Stock Quantity */}
                   <FormField
@@ -565,8 +504,8 @@ export default function ProductFormScreen() {
                   {selectedCategory?.attributes?.length ? (
                     <Text style={styles.hint}>
                       {selectedCategory.attributes.length} attribute
-                      {selectedCategory.attributes.length === 1 ? "" : "s"}{" "}
-                      required for this category.
+                      {selectedCategory.attributes.length === 1 ? "" : "s"} required for this
+                      category.
                     </Text>
                   ) : null}
 
@@ -591,10 +530,7 @@ export default function ProductFormScreen() {
                     {imageList.length ? (
                       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                         {imageList.map((img, index) => (
-                          <View
-                            key={`${img.uri}-${index}`}
-                            style={styles.imageWrapper}
-                          >
+                          <View key={`${img.uri}-${index}`} style={styles.imageWrapper}>
                             <Image
                               source={{ uri: img.uri }}
                               style={styles.imagePreview}
@@ -625,9 +561,7 @@ export default function ProductFormScreen() {
                   {/* Slug Preview */}
                   <Text style={styles.label}>Slug (auto)</Text>
                   <View style={styles.slugBox}>
-                    <Text style={styles.slugText}>
-                      {getSlugPreview(values.name) || "-"}
-                    </Text>
+                    <Text style={styles.slugText}>{getSlugPreview(values.name) || "-"}</Text>
                   </View>
 
                   {/* Category Attributes */}
@@ -635,22 +569,17 @@ export default function ProductFormScreen() {
                     <>
                       <Text style={styles.sectionTitle}>Category Attributes</Text>
                       {categoryAttributes.map((attribute) => {
-                        const currentValue =
-                          attributeValues[attribute.id]?.value || "";
+                        const currentValue = attributeValues[attribute.id]?.value || "";
                         const label = `${attribute.name}${attribute.unit ? ` (${attribute.unit})` : ""}`;
                         return (
                           <View key={attribute.id} style={styles.attributeBlock}>
                             <Text style={styles.label}>
                               {label}{" "}
-                              {attribute.isRequired ? (
-                                <Text style={styles.required}>*</Text>
-                              ) : null}
+                              {attribute.isRequired ? <Text style={styles.required}>*</Text> : null}
                             </Text>
                             {attribute.fieldType === "boolean" ? (
                               <View style={styles.switchRow}>
-                                <Text>
-                                  {currentValue === "true" ? "Yes" : "No"}
-                                </Text>
+                                <Text>{currentValue === "true" ? "Yes" : "No"}</Text>
                                 <Switch
                                   value={currentValue === "true"}
                                   onValueChange={(value) =>
@@ -662,17 +591,12 @@ export default function ProductFormScreen() {
                                   }
                                 />
                               </View>
-                            ) : attribute.fieldType === "select" &&
-                              attribute.options?.length ? (
+                            ) : attribute.fieldType === "select" && attribute.options?.length ? (
                               <SelectDropdown
                                 options={attribute.options}
                                 value={currentValue}
                                 onChange={(value) =>
-                                  handleAttributeChange(
-                                    attribute,
-                                    value,
-                                    values.category
-                                  )
+                                  handleAttributeChange(attribute, value, values.category)
                                 }
                                 placeholder={`Select ${attribute.name}`}
                               />
@@ -680,34 +604,22 @@ export default function ProductFormScreen() {
                               <TextInput
                                 style={[
                                   styles.input,
-                                  attribute.fieldType === "text"
-                                    ? styles.multiline
-                                    : null,
+                                  attribute.fieldType === "text" ? styles.multiline : null,
                                 ]}
                                 placeholder="Enter value"
                                 value={currentValue}
                                 onChangeText={(text) =>
-                                  handleAttributeChange(
-                                    attribute,
-                                    text,
-                                    values.category
-                                  )
+                                  handleAttributeChange(attribute, text, values.category)
                                 }
                                 multiline={attribute.fieldType === "text"}
-                                numberOfLines={
-                                  attribute.fieldType === "text" ? 3 : 1
-                                }
+                                numberOfLines={attribute.fieldType === "text" ? 3 : 1}
                                 keyboardType={
-                                  attribute.fieldType === "number"
-                                    ? "decimal-pad"
-                                    : "default"
+                                  attribute.fieldType === "number" ? "decimal-pad" : "default"
                                 }
                               />
                             )}
                             {attribute.description ? (
-                              <Text style={styles.note}>
-                                {attribute.description}
-                              </Text>
+                              <Text style={styles.note}>{attribute.description}</Text>
                             ) : null}
                           </View>
                         );

@@ -18,5 +18,5 @@ export interface CategoryInterface {
       attributes: ImageInterface;
     } | null;
   } | null;
-  attributes?:   AttributeInterface[];
+  attributes?: AttributeInterface[];
 }

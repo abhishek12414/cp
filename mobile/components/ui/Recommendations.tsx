@@ -20,14 +20,22 @@ export function Recommendations() {
 
   const { data: products = [], isLoading } = useRecommendations();
 
-  const handleAddToCart = (product: { id: string; documentId: string; name: string; price: number; images?: { url: string }[] }) => {
-    dispatch(addToCart({
-      productId: product.documentId,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-      image: product.images?.[0]?.url ? getImageUrl(product.images[0].url) : "",
-    }));
+  const handleAddToCart = (product: {
+    id: string;
+    documentId: string;
+    name: string;
+    price: number;
+    images?: { url: string }[];
+  }) => {
+    dispatch(
+      addToCart({
+        productId: product.documentId,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        image: product.images?.[0]?.url ? getImageUrl(product.images[0].url) : "",
+      })
+    );
   };
 
   if (isLoading) {

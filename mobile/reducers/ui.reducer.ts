@@ -54,12 +54,7 @@ const uiSlice = createSlice({
   },
 });
 
-export const {
-  setTheme,
-  setShowSplash,
-  setIsLoading,
-  showSnackbar,
-  hideSnackbar,
-} = uiSlice.actions;
+export const { setTheme, setShowSplash, setIsLoading, showSnackbar, hideSnackbar } =
+  uiSlice.actions;
 
 export default uiSlice.reducer;

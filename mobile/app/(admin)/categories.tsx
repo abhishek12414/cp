@@ -11,7 +11,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
 import { useCategories } from "@/hooks/queries/useCategories";
-import categoryApi from "@/apis/category.api";
+import { categoryApi } from "@/apis/category.api";
 import { CategoryInterface } from "@/interface";
 import { getImageUrl } from "@/helpers/image";
 
@@ -42,9 +42,7 @@ import { getImageUrl } from "@/helpers/image";
 
 export default function ManageCategoriesScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   // React Query for categories list
@@ -75,10 +73,7 @@ export default function ManageCategoriesScreen() {
     router.push(`/(admin)/categories/${documentId}`);
   };
 
-  const handleDeleteCategory = (
-    documentId: CategoryInterface["documentId"],
-    name: string
-  ) => {
+  const handleDeleteCategory = (documentId: CategoryInterface["documentId"], name: string) => {
     Alert.alert(
       "Confirm Delete",
       `Are you sure you want to delete the category "${name}"? This action cannot be undone.`,
@@ -126,9 +121,7 @@ export default function ManageCategoriesScreen() {
       {/* SafeAreaView with edges excluding 'top' for headered admin layout */}
       <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: primaryColor }]}>
-            Manage Categories
-          </Text>
+          <Text style={[styles.title, { color: primaryColor }]}>Manage Categories</Text>
           <Button
             mode="contained"
             buttonColor={primaryColor}
@@ -203,9 +196,7 @@ export default function ManageCategoriesScreen() {
           }}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>
-              No categories found. Add one to get started.
-            </Text>
+            <Text style={styles.emptyText}>No categories found. Add one to get started.</Text>
           }
           refreshing={isLoading}
           onRefresh={refetch}

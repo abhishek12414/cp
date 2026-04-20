@@ -24,11 +24,7 @@ const BrandCard = ({ data, onPress }: BrandCardProps) => {
     >
       <View style={styles.background}>
         {imageUri ? (
-          <Image
-            source={{ uri: imageUri }}
-            style={styles.logo}
-            contentFit="contain"
-          />
+          <Image source={{ uri: imageUri }} style={styles.logo} contentFit="contain" />
         ) : (
           <Text variant="headlineSmall" style={styles.placeholderText}>
             {data.name?.charAt(0) || "?"}

@@ -11,9 +11,7 @@ export type OrderUploadButtonProps = {
 
 export function OrderUploadButton({ onPress }: OrderUploadButtonProps) {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const textColor = "#FFF";
 
@@ -28,16 +26,10 @@ export function OrderUploadButton({ onPress }: OrderUploadButtonProps) {
           <Ionicons name="camera" size={24} color={textColor} />
         </View>
         <View style={styles.textContainer}>
-          <Text
-            variant="titleMedium"
-            style={[styles.title, { color: textColor }]}
-          >
+          <Text variant="titleMedium" style={[styles.title, { color: textColor }]}>
             Upload Purchase Order
           </Text>
-          <Text
-            variant="bodySmall"
-            style={[styles.subtitle, { color: textColor }]}
-          >
+          <Text variant="bodySmall" style={[styles.subtitle, { color: textColor }]}>
             Take a photo of your order form
           </Text>
         </View>

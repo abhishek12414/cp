@@ -13,10 +13,7 @@ export const getImageUrl = (path: string | undefined | null) => {
  * Strapi 4: { data: { id: number, attributes: { url: string } } }
  * Strapi 5: { id: number, url: string } or { data: { id: number, url: string } }
  */
-export const extractMediaUrl = (
-  media: any,
-  fallbackUrl?: string | null
-): string | null => {
+export const extractMediaUrl = (media: any, fallbackUrl?: string | null): string | null => {
   if (!media) {
     return fallbackUrl ? getImageUrl(fallbackUrl) : null;
   }

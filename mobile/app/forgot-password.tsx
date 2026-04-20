@@ -24,9 +24,7 @@ import authApi from "@/apis/auth.api";
 
 // Validation schema
 const ForgotPasswordSchema = Yup.object().shape({
-  email: Yup.string()
-    .email("Please enter a valid email")
-    .required("Email is required"),
+  email: Yup.string().email("Please enter a valid email").required("Email is required"),
 });
 
 interface ForgotPasswordFormValues {
@@ -35,9 +33,7 @@ interface ForgotPasswordFormValues {
 
 export default function ForgotPasswordScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,9 +76,7 @@ export default function ForgotPasswordScreen() {
               <Text style={styles.successIcon}>✉️</Text>
             </View>
             <Text style={styles.successTitle}>Check Your Email</Text>
-            <Text style={styles.successMessage}>
-              We&apos;ve sent a password reset link to:
-            </Text>
+            <Text style={styles.successMessage}>We&apos;ve sent a password reset link to:</Text>
             <Text style={styles.emailText}>{submittedEmail}</Text>
             <Text style={styles.successHint}>
               Click the link in the email to reset your password. The link will expire in 24 hours.
@@ -137,13 +131,8 @@ export default function ForgotPasswordScreen() {
             </TouchableOpacity>
 
             <View style={styles.logoContainer}>
-              <Image
-                source={require("../assets/images/react-logo.png")}
-                style={styles.logo}
-              />
-              <Text style={[styles.logoText, { color: primaryColor }]}>
-                CurrentShop
-              </Text>
+              <Image source={require("../assets/images/react-logo.png")} style={styles.logo} />
+              <Text style={[styles.logoText, { color: primaryColor }]}>CurrentShop</Text>
             </View>
 
             <View style={styles.formContainer}>
@@ -157,23 +146,13 @@ export default function ForgotPasswordScreen() {
                 validationSchema={ForgotPasswordSchema}
                 onSubmit={handleSubmit}
               >
-                {({
-                  handleChange,
-                  handleBlur,
-                  handleSubmit,
-                  values,
-                  errors,
-                  touched,
-                }) => (
+                {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
                   <View style={styles.form}>
                     {/* Email Input */}
                     <View style={styles.inputContainer}>
                       <Text style={styles.label}>Email Address</Text>
                       <TextInput
-                        style={[
-                          styles.input,
-                          touched.email && errors.email && styles.inputError,
-                        ]}
+                        style={[styles.input, touched.email && errors.email && styles.inputError]}
                         placeholder="Enter your email"
                         placeholderTextColor="#999"
                         value={values.email}
@@ -204,11 +183,7 @@ export default function ForgotPasswordScreen() {
                       style={styles.submitButton}
                       disabled={loading}
                     >
-                      {loading ? (
-                        <ActivityIndicator animating color="#fff" />
-                      ) : (
-                        "Send Reset Link"
-                      )}
+                      {loading ? <ActivityIndicator animating color="#fff" /> : "Send Reset Link"}
                     </Button>
                   </View>
                 )}
@@ -218,7 +193,7 @@ export default function ForgotPasswordScreen() {
               <View style={styles.helpContainer}>
                 <Text style={styles.helpText}>
                   Remember your password?{" "}
-                  <Text 
+                  <Text
                     style={[styles.helpLink, { color: primaryColor }]}
                     onPress={() => router.replace("/login")}
                   >

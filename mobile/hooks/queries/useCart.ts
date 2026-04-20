@@ -20,7 +20,7 @@ const calculateBackoffDelay = (failureCount: number): number => {
   const baseDelay = 1000; // 1 second
   const maxDelay = 30000; // 30 seconds
   const jitter = Math.random() * 500; // Random 0-500ms
-  
+
   // Exponential: 1s, 2s, 4s, 8s, 16s, 30s (capped)
   return Math.min(baseDelay * Math.pow(2, failureCount) + jitter, maxDelay);
 };
@@ -83,9 +83,9 @@ export const useCart = () => {
  */
 export const useCartCount = () => {
   const { data: cart } = useCart();
-  
+
   const count = cart?.cartItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-  
+
   return { count, isLoading: false };
 };
 
@@ -94,12 +94,11 @@ export const useCartCount = () => {
  */
 export const useIsInCart = (productId: string | number) => {
   const { data: cart } = useCart();
-  
+
   const cartItem = cart?.cartItems?.find(
-    (item) => item.product?.id === Number(productId) || 
-               item.product?.documentId === productId
+    (item) => item.product?.id === Number(productId) || item.product?.documentId === productId
   );
-  
+
   return {
     isInCart: !!cartItem,
     quantity: cartItem?.quantity || 0,
@@ -122,7 +121,7 @@ export const useAddToCart = () => {
       });
       return response.data;
     },
-    
+
     // Optimistic update
     onMutate: async (input) => {
       // Cancel outgoing refetches
@@ -134,8 +133,8 @@ export const useAddToCart = () => {
       // Optimistically update cart
       if (previousCart && input.productData) {
         const existingItemIndex = previousCart.cartItems?.findIndex(
-          (item) => item.product?.id === Number(input.product) || 
-                     item.product?.documentId === input.product
+          (item) =>
+            item.product?.id === Number(input.product) || item.product?.documentId === input.product
         );
 
         if (existingItemIndex !== undefined && existingItemIndex >= 0 && previousCart.cartItems) {
@@ -145,7 +144,7 @@ export const useAddToCart = () => {
             ...updatedItems[existingItemIndex],
             quantity: updatedItems[existingItemIndex].quantity + (input.quantity || 1),
           };
-          
+
           queryClient.setQueryData<CartInterface>(cartKeys.cart(), {
             ...previousCart,
             cartItems: updatedItems,
@@ -159,9 +158,9 @@ export const useAddToCart = () => {
             product: input.productData,
             quantity: input.quantity || 1,
           };
-          
+
           const updatedItems = [...(previousCart.cartItems || []), newItem];
-          
+
           queryClient.setQueryData<CartInterface>(cartKeys.cart(), {
             ...previousCart,
             cartItems: updatedItems,
@@ -176,7 +175,7 @@ export const useAddToCart = () => {
           product: input.productData,
           quantity: input.quantity || 1,
         };
-        
+
         queryClient.setQueryData<CartInterface>(cartKeys.cart(), {
           id: Date.now(),
           documentId: `temp-cart-${Date.now()}`,
@@ -187,28 +186,28 @@ export const useAddToCart = () => {
 
       return { previousCart };
     },
-    
+
     // On error, rollback
     onError: (error, input, context) => {
       if (context?.previousCart !== undefined) {
         queryClient.setQueryData(cartKeys.cart(), context.previousCart);
       }
-      
+
       // Track error
       analytics.trackApiError(
         "cart/add",
         (error as any)?.response?.status || 0,
         (error as Error)?.message || "Unknown error"
       );
-      
+
       // Show user-friendly error
       const errorMessage = isNetworkError(error)
         ? "Network error. Please check your connection and try again."
         : (error as any)?.response?.data?.error?.message || "Failed to add item to cart";
-      
+
       Alert.alert("Error", errorMessage);
     },
-    
+
     // On success, update with server data
     onSuccess: (data, input) => {
       // Track analytics
@@ -221,11 +220,11 @@ export const useAddToCart = () => {
           price: product.price,
         });
       }
-      
+
       // Invalidate to refetch fresh data
       queryClient.invalidateQueries({ queryKey: cartKeys.cart() });
     },
-    
+
     // Retry configuration
     retry: (failureCount, error) => {
       // Only retry network errors
@@ -250,7 +249,7 @@ export const useUpdateCartItem = () => {
       const response = await cartApi.updateCartItem(cartItemId, { quantity });
       return response.data;
     },
-    
+
     onMutate: async ({ cartItemId, quantity }) => {
       await queryClient.cancelQueries({ queryKey: cartKeys.cart() });
       const previousCart = queryClient.getQueryData<CartInterface | null>(cartKeys.cart());
@@ -259,7 +258,7 @@ export const useUpdateCartItem = () => {
         const updatedItems = previousCart.cartItems.map((item) =>
           item.documentId === cartItemId ? { ...item, quantity } : item
         );
-        
+
         queryClient.setQueryData<CartInterface>(cartKeys.cart(), {
           ...previousCart,
           cartItems: updatedItems,
@@ -269,23 +268,23 @@ export const useUpdateCartItem = () => {
 
       return { previousCart };
     },
-    
+
     onError: (error, variables, context) => {
       if (context?.previousCart !== undefined) {
         queryClient.setQueryData(cartKeys.cart(), context.previousCart);
       }
-      
+
       const errorMessage = isNetworkError(error)
         ? "Network error. Please try again."
         : "Failed to update quantity";
-      
+
       Alert.alert("Error", errorMessage);
     },
-    
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.cart() });
     },
-    
+
     retry: (failureCount, error) => isNetworkError(error) && failureCount < 3,
     retryDelay: calculateBackoffDelay,
   });
@@ -302,7 +301,7 @@ export const useRemoveFromCart = () => {
       const response = await cartApi.removeFromCart(cartItemId);
       return response.data;
     },
-    
+
     onMutate: async (cartItemId) => {
       await queryClient.cancelQueries({ queryKey: cartKeys.cart() });
       const previousCart = queryClient.getQueryData<CartInterface | null>(cartKeys.cart());
@@ -311,7 +310,7 @@ export const useRemoveFromCart = () => {
         const updatedItems = previousCart.cartItems.filter(
           (item) => item.documentId !== cartItemId
         );
-        
+
         queryClient.setQueryData<CartInterface>(cartKeys.cart(), {
           ...previousCart,
           cartItems: updatedItems,
@@ -321,24 +320,24 @@ export const useRemoveFromCart = () => {
 
       return { previousCart };
     },
-    
+
     onError: (error, variables, context) => {
       if (context?.previousCart !== undefined) {
         queryClient.setQueryData(cartKeys.cart(), context.previousCart);
       }
-      
+
       const errorMessage = isNetworkError(error)
         ? "Network error. Please try again."
         : "Failed to remove item";
-      
+
       Alert.alert("Error", errorMessage);
     },
-    
+
     onSuccess: (_, cartItemId) => {
       analytics.track("remove_from_cart", { cart_item_id: cartItemId });
       queryClient.invalidateQueries({ queryKey: cartKeys.cart() });
     },
-    
+
     retry: (failureCount, error) => isNetworkError(error) && failureCount < 3,
     retryDelay: calculateBackoffDelay,
   });
@@ -355,11 +354,11 @@ export const useClearCart = () => {
       const response = await cartApi.clearCart();
       return response.data;
     },
-    
+
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: cartKeys.cart() });
       const previousCart = queryClient.getQueryData<CartInterface | null>(cartKeys.cart());
-      
+
       // Optimistically clear cart
       if (previousCart) {
         queryClient.setQueryData<CartInterface>(cartKeys.cart(), {
@@ -371,24 +370,24 @@ export const useClearCart = () => {
 
       return { previousCart };
     },
-    
+
     onError: (error, variables, context) => {
       if (context?.previousCart !== undefined) {
         queryClient.setQueryData(cartKeys.cart(), context.previousCart);
       }
-      
+
       const errorMessage = isNetworkError(error)
         ? "Network error. Please try again."
         : "Failed to clear cart";
-      
+
       Alert.alert("Error", errorMessage);
     },
-    
+
     onSuccess: () => {
       analytics.track("clear_cart", {});
       queryClient.invalidateQueries({ queryKey: cartKeys.cart() });
     },
-    
+
     retry: (failureCount, error) => isNetworkError(error) && failureCount < 3,
     retryDelay: calculateBackoffDelay,
   });
@@ -430,7 +429,7 @@ export const useCartOperations = () => {
     count,
     isLoading,
     error,
-    
+
     // Operations
     addToCart: addToCart.mutateAsync,
     updateCartItem: updateCartItem.mutateAsync,
@@ -438,7 +437,7 @@ export const useCartOperations = () => {
     clearCart: clearCart.mutateAsync,
     refetch,
     syncCart,
-    
+
     // Loading states
     isAddingToCart: addToCart.isPending,
     isUpdating: updateCartItem.isPending,
@@ -452,7 +451,7 @@ function calculateTotal(items: CartItemInterface[] | undefined): number {
   if (!items) return 0;
   return items.reduce((sum, item) => {
     const price = item.product?.price || 0;
-    return sum + (price * item.quantity);
+    return sum + price * item.quantity;
   }, 0);
 }
 

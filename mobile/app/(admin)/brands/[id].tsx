@@ -1,11 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
@@ -16,10 +10,9 @@ import { Formik } from "formik";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
-import FormField from "@/components/FormField";
-import brandApi, { BrandInput } from "@/apis/brand.api";
-import { BrandInterface } from "@/interface";
-import { getImageUrl, extractMediaUrl, extractMediaId } from "@/helpers/image";
+import { FormField } from "@/components/FormField";
+import { brandApi, BrandInput } from "@/apis/brand.api";
+import { extractMediaUrl, extractMediaId } from "@/helpers/image";
 import { generateSlug } from "@/helpers/dataFormatter";
 import {
   brandValidationSchema,
@@ -40,9 +33,7 @@ export default function BrandFormScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isEdit = id !== "new";
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
 
   // State for selected logo image URI (for preview)
@@ -106,10 +97,7 @@ export default function BrandFormScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
-      Alert.alert(
-        "Success",
-        `Brand ${isEdit ? "updated" : "created"} successfully.`
-      );
+      Alert.alert("Success", `Brand ${isEdit ? "updated" : "created"} successfully.`);
       router.back();
     },
     onError: (err) => {
@@ -164,10 +152,7 @@ export default function BrandFormScreen() {
     return (
       <ThemedView style={styles.container}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        <SafeAreaView
-          style={styles.safeArea}
-          edges={["bottom", "left", "right"]}
-        >
+        <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
           <View style={styles.center}>
             <Text>Loading brand...</Text>
           </View>
@@ -222,11 +207,7 @@ export default function BrandFormScreen() {
                 />
 
                 {/* Active Switch */}
-                <FormField
-                  name="isActive"
-                  type="switch"
-                  label="Active Brand"
-                />
+                <FormField name="isActive" type="switch" label="Active Brand" />
 
                 {/* Logo Upload */}
                 <FormField
@@ -248,9 +229,7 @@ export default function BrandFormScreen() {
                 {/* Slug Preview */}
                 <Text style={styles.label}>Slug (auto)</Text>
                 <View style={styles.slugBox}>
-                  <Text style={styles.slugText}>
-                    {getSlugPreview(values.name) || "-"}
-                  </Text>
+                  <Text style={styles.slugText}>{getSlugPreview(values.name) || "-"}</Text>
                 </View>
                 <Text style={styles.note}>
                   Slug is generated from the name using lowercase and hyphens.
@@ -358,4 +337,3 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
-

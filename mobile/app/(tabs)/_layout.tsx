@@ -18,12 +18,12 @@ import { RootState } from "@/store";
 function useIsAdmin(): boolean {
   const user = useSelector((state: RootState) => state.auth.user);
   if (!user?.role) return false;
-  
+
   // Check if role type is 'admin' or role name contains 'admin' (case-insensitive)
-  const roleType = user.role.type?.toLowerCase() || '';
-  const roleName = user.role.name?.toLowerCase() || '';
-  
-  return roleType === 'admin' || roleName.includes('admin');
+  const roleType = user.role.type?.toLowerCase() || "";
+  const roleName = user.role.name?.toLowerCase() || "";
+
+  return roleType === "admin" || roleName.includes("admin");
 }
 
 export default function TabLayout() {
@@ -50,27 +50,21 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => (
-            <Icon size={28} name="home" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Icon size={28} name="home" color={color} />,
         }}
       />
       <Tabs.Screen
         name="categories"
         options={{
           title: "Categories",
-          tabBarIcon: ({ color }) => (
-            <Icon size={28} name="view-grid" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Icon size={28} name="view-grid" color={color} />,
         }}
       />
       <Tabs.Screen
         name="upload-order"
         options={{
           title: "Upload",
-          tabBarIcon: ({ color }) => (
-            <Icon size={28} name="camera" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Icon size={28} name="camera" color={color} />,
         }}
       />
       {/* Admin Panel tab: Only visible to users with admin role.
@@ -80,9 +74,7 @@ export default function TabLayout() {
         name="admin"
         options={{
           title: "Admin Panel",
-          tabBarIcon: ({ color }) => (
-            <Icon size={28} name="shield-account" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Icon size={28} name="shield-account" color={color} />,
         }}
         href={isAdmin ? undefined : null}
       />
@@ -90,9 +82,7 @@ export default function TabLayout() {
         name="account"
         options={{
           title: "Account",
-          tabBarIcon: ({ color }) => (
-            <Icon size={28} name="account-circle" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Icon size={28} name="account-circle" color={color} />,
         }}
       />
     </Tabs>

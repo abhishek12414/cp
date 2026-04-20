@@ -1,4 +1,4 @@
-export type AddressType = 'shipping' | 'billing' | 'both';
+export type AddressType = "shipping" | "billing" | "both";
 
 export interface AddressInterface {
   id: number;

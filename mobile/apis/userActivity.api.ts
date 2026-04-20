@@ -3,7 +3,7 @@ import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
 
 export interface TrackActivityInput {
-  type: 'search' | 'product_view' | 'product_purchase' | 'category_view' | 'brand_view';
+  type: "search" | "product_view" | "product_purchase" | "category_view" | "brand_view";
   searchQuery?: string;
   product?: number;
   category?: number;

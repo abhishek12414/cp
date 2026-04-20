@@ -13,19 +13,19 @@ import { useBrand, useCategories, useProducts } from "@/hooks/queries";
 
 /**
  * Admin Panel Placeholder
- * 
+ *
  * This is the starting point for the admin panel where administrators can manage:
  * - Brands
  * - Categories
  * - Products
  * - Orders
- * 
+ *
  * Backend is powered by Strapi which already has content types for these entities.
  * Future implementation will include:
  * - CRUD operations via API (e.g., extending product.api.ts patterns)
  * - Role-based access (admin users only, via auth reducer)
  * - List views, forms for editing, etc.
- * 
+ *
  * For now, this serves as a route setup in the mobile app with buttons to
  * navigate to placeholder screens for each management section. Content is wrapped
  * in ScrollView to handle cases where it exceeds screen height (e.g., long placeholder
@@ -34,9 +34,7 @@ import { useBrand, useCategories, useProducts } from "@/hooks/queries";
 
 export default function AdminPanelScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const palette = Colors[colorScheme];
 
   const { data: brands } = useBrand();
@@ -115,8 +113,7 @@ export default function AdminPanelScreen() {
         >
           <View style={styles.header}>
             <Text style={[styles.title, { color: palette.text }]}>Admin Dashboard</Text>
-            <Text style={[styles.subtitle, { color: palette.icon }]}
-            >
+            <Text style={[styles.subtitle, { color: palette.icon }]}>
               Quick insights and management actions
             </Text>
           </View>
@@ -131,18 +128,11 @@ export default function AdminPanelScreen() {
                   { backgroundColor: palette.card, borderColor: palette.border },
                 ]}
               >
-                <View style={[styles.statIconWrap, { backgroundColor: `${item.color}1A` }]}
-                >
+                <View style={[styles.statIconWrap, { backgroundColor: `${item.color}1A` }]}>
                   <Ionicons name={item.icon as any} size={22} color={item.color} />
                 </View>
-                <Text style={[styles.statValue, { color: palette.text }]}
-                >
-                  {item.value}
-                </Text>
-                <Text style={[styles.statLabel, { color: palette.icon }]}
-                >
-                  {item.label}
-                </Text>
+                <Text style={[styles.statValue, { color: palette.text }]}>{item.value}</Text>
+                <Text style={[styles.statLabel, { color: palette.icon }]}>{item.label}</Text>
               </View>
             ))}
           </View>
@@ -158,23 +148,15 @@ export default function AdminPanelScreen() {
                 ]}
               >
                 <View style={styles.actionHeader}>
-                  <View style={[styles.actionIconWrap, { backgroundColor: `${palette.tint}1A` }]}
-                  >
+                  <View style={[styles.actionIconWrap, { backgroundColor: `${palette.tint}1A` }]}>
                     <Ionicons name={action.icon as any} size={20} color={palette.tint} />
                   </View>
-                  <Text style={[styles.actionTitle, { color: palette.text }]}
-                  >
-                    {action.label}
-                  </Text>
+                  <Text style={[styles.actionTitle, { color: palette.text }]}>{action.label}</Text>
                 </View>
-                <Text style={[styles.actionDescription, { color: palette.icon }]}
-                >
+                <Text style={[styles.actionDescription, { color: palette.icon }]}>
                   {action.description}
                 </Text>
-                <Text
-                  onPress={action.onPress}
-                  style={[styles.actionLink, { color: palette.tint }]}
-                >
+                <Text onPress={action.onPress} style={[styles.actionLink, { color: palette.tint }]}>
                   Open
                 </Text>
               </View>

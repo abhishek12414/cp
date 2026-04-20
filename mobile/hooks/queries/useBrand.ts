@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/apis/apiClient";
 import { apiRoutes } from "@/apis/apiRoutes";
 import { getQueryString } from "@/helpers/queryParams";
-import { ApiResponseInterface, BrandInterface, CategoryInterface, ProductInterface } from "@/interface";
+import {
+  ApiResponseInterface,
+  BrandInterface,
+  CategoryInterface,
+  ProductInterface,
+} from "@/interface";
 import { QUERY_CONFIG } from "@/config/queryConfig";
 
 const populate = ["logo"];
@@ -85,7 +90,11 @@ export const useBrandCategories = (brandDocumentId: string) => {
  * Hook to fetch products for a specific brand and category (lazy loaded)
  * Uses semiStatic config - products
  */
-export const useBrandCategoryProducts = (brandDocumentId: string, categoryDocumentId: string, enabled: boolean = false) => {
+export const useBrandCategoryProducts = (
+  brandDocumentId: string,
+  categoryDocumentId: string,
+  enabled: boolean = false
+) => {
   return useQuery<ProductInterface[]>({
     queryKey: ["brandCategoryProducts", brandDocumentId, categoryDocumentId],
     queryFn: async () => {

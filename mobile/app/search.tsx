@@ -1,37 +1,18 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  Dimensions,
-  FlatList,
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Keyboard,
-} from "react-native";
-import {
-  ActivityIndicator,
-  IconButton,
-  Text,
-  Searchbar,
-  Chip,
-  Divider,
-} from "react-native-paper";
+import React, { useState, useMemo } from "react";
+import { FlatList, StyleSheet, View, TouchableOpacity, Keyboard } from "react-native";
+import { ActivityIndicator, IconButton, Text, Searchbar, Chip, Divider } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import {
-  useSearchProducts,
-  useSearchCategories,
-} from "@/hooks/queries";
+import { useSearchProducts, useSearchCategories } from "@/hooks/queries";
 import { useSearchBrands } from "@/hooks/queries/useBrand";
 import { getImageUrl } from "@/helpers/image";
 import { BrandInterface, CategoryInterface, ProductInterface } from "@/interface";
-
-const { width } = Dimensions.get("window");
 
 // Search result type
 type SearchResultType = "product" | "category" | "brand";
@@ -60,9 +41,7 @@ export default function SearchScreen() {
   const [searchSubmitted, setSearchSubmitted] = useState(!!initialQuery);
 
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const isDark = colorScheme === "dark";
 
@@ -216,28 +195,23 @@ export default function SearchScreen() {
         {/* Filter Tabs */}
         {searchSubmitted && searchQuery.length >= 2 && (
           <View style={styles.filterTabs}>
-            {(["all", "products", "categories", "brands"] as FilterTab[]).map(
-              (filter) => (
-                <Chip
-                  key={filter}
-                  mode={activeFilter === filter ? "flat" : "outlined"}
-                  selected={activeFilter === filter}
-                  onPress={() => setActiveFilter(filter)}
-                  style={[
-                    styles.filterChip,
-                    activeFilter === filter && {
-                      backgroundColor: primaryColor,
-                    },
-                  ]}
-                  textStyle={[
-                    styles.filterChipText,
-                    activeFilter === filter && { color: "#fff" },
-                  ]}
-                >
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)} ({counts[filter]})
-                </Chip>
-              )
-            )}
+            {(["all", "products", "categories", "brands"] as FilterTab[]).map((filter) => (
+              <Chip
+                key={filter}
+                mode={activeFilter === filter ? "flat" : "outlined"}
+                selected={activeFilter === filter}
+                onPress={() => setActiveFilter(filter)}
+                style={[
+                  styles.filterChip,
+                  activeFilter === filter && {
+                    backgroundColor: primaryColor,
+                  },
+                ]}
+                textStyle={[styles.filterChipText, activeFilter === filter && { color: "#fff" }]}
+              >
+                {filter.charAt(0).toUpperCase() + filter.slice(1)} ({counts[filter]})
+              </Chip>
+            ))}
           </View>
         )}
 
@@ -304,18 +278,7 @@ interface SearchResultItemProps {
   isDark: boolean;
 }
 
-const SearchResultItem = ({
-  result,
-  onPress,
-  primaryColor,
-  isDark,
-}: SearchResultItemProps) => {
-  const typeIcon = {
-    product: "package-variant",
-    category: "shape-outline",
-    brand: "tag-outline",
-  };
-
+const SearchResultItem = ({ result, onPress, primaryColor, isDark }: SearchResultItemProps) => {
   const typeLabel = {
     product: "Product",
     category: "Category",
@@ -331,11 +294,7 @@ const SearchResultItem = ({
       {/* Image */}
       <View style={styles.resultImageContainer}>
         {result.image ? (
-          <Image
-            source={{ uri: result.image }}
-            style={styles.resultImage}
-            contentFit="cover"
-          />
+          <Image source={{ uri: result.image }} style={styles.resultImage} contentFit="cover" />
         ) : (
           <View style={[styles.resultImagePlaceholder, { backgroundColor: primaryColor }]}>
             <Text style={styles.resultImagePlaceholderText}>
@@ -385,11 +344,7 @@ const SearchResultItem = ({
       </View>
 
       {/* Arrow */}
-      <IconButton
-        icon="chevron-right"
-        size={24}
-        iconColor={isDark ? "#666" : "#999"}
-      />
+      <IconButton icon="chevron-right" size={24} iconColor={isDark ? "#666" : "#999"} />
     </TouchableOpacity>
   );
 };
@@ -494,7 +449,7 @@ const styles = StyleSheet.create({
   typeChip: {
     height: 24,
     paddingHorizontal: 8,
-    width: "auto"
+    width: "auto",
   },
   typeChipText: {
     fontSize: 11,

@@ -7,16 +7,16 @@ import { ThemedView } from "@/components/ThemedView";
 
 /**
  * Tab redirect wrapper for the admin panel.
- * 
+ *
  * This screen appears in the bottom tab navigation (as a public route for now).
  * It immediately redirects to the main admin panel at /(admin), which has the
  * placeholder UI and dedicated stack layout for managing brands, categories,
  * products, and orders.
- * 
+ *
  * Why a redirect? The admin panel uses a separate route group outside of (tabs)
  * to maintain its own Stack layout (with headers) while integrating easily into
  * tabs for quick access. This keeps it public/placeholder as requested.
- * 
+ *
  * Future: Replace with auth guard (e.g., check admin role from Redux/auth reducer)
  * and direct integration.
  */

@@ -11,11 +11,7 @@ interface CartIconProps {
   size?: number;
 }
 
-export const CartIcon: React.FC<CartIconProps> = ({
-  onPress,
-  color = "#000",
-  size = 24,
-}) => {
+export const CartIcon: React.FC<CartIconProps> = ({ onPress, color = "#000", size = 24 }) => {
   const { count } = useCartCount();
 
   return (
@@ -23,10 +19,7 @@ export const CartIcon: React.FC<CartIconProps> = ({
       <View style={styles.iconWrapper}>
         <Text style={[styles.icon, { fontSize: size, color }]}>🛒</Text>
         {count > 0 && (
-          <Badge
-            style={[styles.badge, { backgroundColor: Colors.light.primary }]}
-            size={18}
-          >
+          <Badge style={[styles.badge, { backgroundColor: Colors.light.primary }]} size={18}>
             {count > 99 ? "99+" : count}
           </Badge>
         )}

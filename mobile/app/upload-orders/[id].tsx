@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  StyleSheet,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
-} from "react-native";
+import { StyleSheet, View, ScrollView, TouchableOpacity, Linking } from "react-native";
 import { Text, IconButton, Surface, ActivityIndicator, Chip } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";

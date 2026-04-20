@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  StyleSheet,
-  View,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-} from "react-native";
+import { StyleSheet, View, FlatList, TouchableOpacity, RefreshControl } from "react-native";
 import { Text, IconButton, Surface, Chip, Button } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -14,19 +8,25 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
 import { useUserOrders } from "@/hooks/queries/useCheckout";
 import { OrderInterface } from "@/interface";
-import LoadingScreen from "@/components/LoadingScreen";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import OfflineScreen from "@/components/OfflineScreen";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { ThemedView } from "@/components/ThemedView";
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "pending": return "#f59e0b";
-    case "processing": return "#3b82f6";
-    case "shipped": return "#8b5cf6";
-    case "delivered": return "#10b981";
-    case "cancelled": return "#ef4444";
-    default: return "#6b7280";
+    case "pending":
+      return "#f59e0b";
+    case "processing":
+      return "#3b82f6";
+    case "shipped":
+      return "#8b5cf6";
+    case "delivered":
+      return "#10b981";
+    case "cancelled":
+      return "#ef4444";
+    default:
+      return "#6b7280";
   }
 };
 
@@ -40,7 +40,8 @@ const formatDate = (dateString?: string) => {
 };
 
 export default function MyOrdersScreen() {
-  const colorScheme = useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
+  const colorScheme =
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const { isConnected } = useNetworkStatus();
 
@@ -109,14 +110,18 @@ export default function MyOrdersScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <IconButton icon="arrow-left" size={24} onPress={() => router.back()} />
-          <Text variant="headlineSmall" style={styles.headerTitle}>My Orders</Text>
+          <Text variant="headlineSmall" style={styles.headerTitle}>
+            My Orders
+          </Text>
           <View style={{ width: 48 }} />
         </View>
 
         {orders.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>📦</Text>
-            <Text variant="titleLarge" style={styles.emptyTitle}>No orders yet</Text>
+            <Text variant="titleLarge" style={styles.emptyTitle}>
+              No orders yet
+            </Text>
             <Text variant="bodyMedium" style={styles.emptySubtitle}>
               Start shopping and your orders will appear here
             </Text>
@@ -135,9 +140,7 @@ export default function MyOrdersScreen() {
             renderItem={renderOrderItem}
             keyExtractor={(item) => item.documentId || String(item.id)}
             contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl refreshing={isLoading} onRefresh={refetch} />
-            }
+            refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
             showsVerticalScrollIndicator={false}
           />
         )}
@@ -149,17 +152,45 @@ export default function MyOrdersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
   headerTitle: { fontWeight: "700" },
   listContent: { padding: 16, paddingBottom: 40 },
-  orderCard: { padding: 16, marginBottom: 12, borderRadius: 12, backgroundColor: "#fff", elevation: 1 },
-  orderHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },
+  orderCard: {
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    elevation: 1,
+  },
+  orderHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
   orderNumber: { fontWeight: "600" },
   orderDate: { color: "#666", marginTop: 2 },
   statusChip: { height: 28 },
-  orderDetails: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  orderDetails: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   orderTotal: { fontWeight: "700" },
-  orderFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 },
+  orderFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+  },
   paymentMethod: { color: "#666" },
   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40 },
   emptyIcon: { fontSize: 64, marginBottom: 16 },

@@ -18,9 +18,7 @@ export interface BrandFilters {
 }
 
 // Helper to clean payload for Strapi (omit undefined/null optional fields to avoid validation errors like regex on empty website or bad media ID)
-const cleanBrandData = (
-  data: BrandInput | Partial<BrandInput>,
-): Record<string, any> => {
+const cleanBrandData = (data: BrandInput | Partial<BrandInput>): Record<string, any> => {
   const cleaned: Record<string, any> = {};
   Object.entries(data).forEach(([key, value]) => {
     // Keep required , omit undefined ; allow null for optional like logo to clear
@@ -61,23 +59,17 @@ export const brandApi = {
   // POST /api/brands with { data: cleaned } - fixes 400 by proper format/optional fields
   createBrand: (data: BrandInput) => {
     const cleaned = cleanBrandData(data);
-    return apiClient.post<ApiResponseInterface<BrandInterface>>(
-      apiRoutes.BRANDS,
-      {
-        data: cleaned, // Strapi requires {data: {...}} wrapper for create
-      },
-    );
+    return apiClient.post<ApiResponseInterface<BrandInterface>>(apiRoutes.BRANDS, {
+      data: cleaned, // Strapi requires {data: {...}} wrapper for create
+    });
   },
 
   // PUT /api/brands/{id} with cleaned data - ensures no validation errors
   updateBrand: (id: string | number, data: Partial<BrandInput>) => {
     const cleaned = cleanBrandData(data);
-    return apiClient.put<ApiResponseInterface<BrandInterface>>(
-      apiRoutes.BRAND(id.toString()),
-      {
-        data: cleaned,
-      },
-    );
+    return apiClient.put<ApiResponseInterface<BrandInterface>>(apiRoutes.BRAND(id.toString()), {
+      data: cleaned,
+    });
   },
 
   // DELETE /api/brands/{id}

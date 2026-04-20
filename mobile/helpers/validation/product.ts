@@ -21,10 +21,7 @@ export const productValidationSchema = Yup.object().shape({
     .min(0, "Price must be 0 or greater")
     .typeError("Please enter a valid price"),
 
-  sku: Yup.string()
-    .trim()
-    .max(50, "SKU must be 50 characters or less")
-    .nullable(),
+  sku: Yup.string().trim().max(50, "SKU must be 50 characters or less").nullable(),
 
   stockQuantity: Yup.number()
     .min(0, "Stock quantity must be 0 or greater")
@@ -32,9 +29,7 @@ export const productValidationSchema = Yup.object().shape({
     .typeError("Please enter a valid stock quantity")
     .nullable(),
 
-  category: Yup.string()
-    .required("Please select a category")
-    .nullable(),
+  category: Yup.string().required("Please select a category").nullable(),
 
   brand: Yup.string().nullable(),
 

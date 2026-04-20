@@ -1,19 +1,11 @@
 import React, { useState } from "react";
-import {
-  Alert,
-  Modal,
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-} from "react-native";
+import { Alert, Modal, StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import * as ExpoImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { Button, IconButton } from "react-native-paper";
 
 import uploadApi from "@/apis/upload.api";
-import { getImageUrl } from "@/helpers/image";
-import MediaPicker from "./MediaPicker";
+import { MediaPicker } from "./MediaPicker";
 import { Colors } from "@/constants/Colors";
 
 interface ImagePickerProps {
@@ -115,17 +107,13 @@ export function ImagePicker({
 
   const handlePickImage = async () => {
     setOptionsModalVisible(false);
-    
+
     try {
       // Request permission
-      const permissionResult =
-        await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
+      const permissionResult = await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert(
-          "Permission required",
-          "Allow photo access for image upload."
-        );
+        Alert.alert("Permission required", "Allow photo access for image upload.");
         return;
       }
 
@@ -166,13 +154,19 @@ export function ImagePicker({
         Alert.alert("Success", "Image uploaded successfully.");
       } catch (error: any) {
         console.error("Image upload error:", error?.response?.data || error?.message || error);
-        Alert.alert("Error", error?.response?.data?.error?.message || "Failed to upload image. Please try again.");
+        Alert.alert(
+          "Error",
+          error?.response?.data?.error?.message || "Failed to upload image. Please try again."
+        );
       } finally {
         setIsUploading(false);
       }
     } catch (error: any) {
       console.error("Image picker error:", error?.message || error);
-      Alert.alert("Error", error?.message || "Unable to open image picker. Please check app permissions.");
+      Alert.alert(
+        "Error",
+        error?.message || "Unable to open image picker. Please check app permissions."
+      );
     }
   };
 
@@ -181,7 +175,7 @@ export function ImagePicker({
     setMediaPickerVisible(true);
   };
 
-  const handleMediaSelect = (files: Array<{ id: number; url: string }>) => {
+  const handleMediaSelect = (files: { id: number; url: string }[]) => {
     if (files.length > 0) {
       // For single selection, use the first file
       const file = files[0];
@@ -202,7 +196,7 @@ export function ImagePicker({
         ) : (
           <Text style={styles.placeholder}>{placeholder}</Text>
         )}
-        
+
         <Button
           mode="outlined"
           onPress={() => setOptionsModalVisible(true)}
@@ -241,11 +235,8 @@ export function ImagePicker({
           <View style={styles.optionsContainer}>
             <View style={styles.optionsContent}>
               <Text style={styles.optionsTitle}>Select Image Source</Text>
-              
-              <TouchableOpacity
-                style={styles.optionItem}
-                onPress={handlePickImage}
-              >
+
+              <TouchableOpacity style={styles.optionItem} onPress={handlePickImage}>
                 <IconButton
                   icon="camera"
                   size={24}
@@ -260,10 +251,7 @@ export function ImagePicker({
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.optionItem}
-                onPress={handleSelectFromGallery}
-              >
+              <TouchableOpacity style={styles.optionItem} onPress={handleSelectFromGallery}>
                 <IconButton
                   icon="image-multiple"
                   size={24}
@@ -272,9 +260,7 @@ export function ImagePicker({
                 />
                 <View style={styles.optionTextContainer}>
                   <Text style={styles.optionTitle}>Select from Gallery</Text>
-                  <Text style={styles.optionSubtitle}>
-                    Choose from previously uploaded images
-                  </Text>
+                  <Text style={styles.optionSubtitle}>Choose from previously uploaded images</Text>
                 </View>
               </TouchableOpacity>
 

@@ -2,6 +2,7 @@
   "name": "currentshop",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
     "start": "APP_ENV=development expo start",
     "start:staging": "APP_ENV=staging expo start",
@@ -15,7 +16,21 @@
     "ios:prod": "APP_ENV=production expo start --ios",
     "web": "APP_ENV=development expo start --web",
     "lint": "expo lint",
-    "lint:fix": "expo lint --fix"
+    "lint:fix": "expo lint --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json}\"",
+    "build:dev": "npx eas build --profile development --platform all",
+    "build:dev:android": "npx eas build --profile development --platform android",
+    "build:dev:ios": "npx eas build --profile development --platform ios",
+    "build:preview": "npx eas build --profile preview --platform all",
+    "build:preview:android": "npx eas build --profile preview --platform android",
+    "build:preview:ios": "npx eas build --profile preview --platform ios",
+    "build:prod": "npx eas build --profile production --platform all",
+    "build:prod:android": "npx eas build --profile production --platform android",
+    "build:prod:ios": "npx eas build --profile production --platform ios",
+    "update:dev": "APP_ENV=development npx eas update --channel development --message",
+    "update:staging": "APP_ENV=staging npx eas update --channel staging --message",
+    "update:prod": "APP_ENV=production npx eas update --channel production --message"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -42,6 +57,7 @@
     "expo-status-bar": "~3.0.9",
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
+    "expo-updates": "~29.0.16",
     "expo-web-browser": "~15.0.10",
     "formik": "^2.4.9",
     "qs": "^6.14.1",
@@ -63,10 +79,13 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~19.1.10",
     "@types/yup": "^0.29.14",
+    "eas-cli": "^18.7.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "prettier": "^3.8.3",
     "react-native-dotenv": "^3.4.11",
     "typescript": "~5.9.2"
-  },
-  "private": true
+  }
 }

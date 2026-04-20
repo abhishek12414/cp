@@ -126,15 +126,12 @@ export const useWishlistTracking = () => {
     []
   );
 
-  const trackRemoveFromWishlist = useCallback(
-    (productId: string, productName: string) => {
-      analytics.track("remove_from_wishlist", {
-        product_id: productId,
-        product_name: productName,
-      });
-    },
-    []
-  );
+  const trackRemoveFromWishlist = useCallback((productId: string, productName: string) => {
+    analytics.track("remove_from_wishlist", {
+      product_id: productId,
+      product_name: productName,
+    });
+  }, []);
 
   return {
     trackAddToWishlist,
@@ -146,15 +143,12 @@ export const useWishlistTracking = () => {
  * Hook for order-related tracking events
  */
 export const useOrderTracking = () => {
-  const trackCheckoutStart = useCallback(
-    (cartValue: number, itemCount: number) => {
-      analytics.track("checkout_start", {
-        cart_value: cartValue,
-        item_count: itemCount,
-      });
-    },
-    []
-  );
+  const trackCheckoutStart = useCallback((cartValue: number, itemCount: number) => {
+    analytics.track("checkout_start", {
+      cart_value: cartValue,
+      item_count: itemCount,
+    });
+  }, []);
 
   const trackOrderCreate = useCallback(
     (orderId: string, totalValue: number, itemCount: number, paymentMethod?: string) => {
@@ -179,15 +173,12 @@ export const useOrderTracking = () => {
     []
   );
 
-  const trackOrderCancel = useCallback(
-    (orderId: string, reason?: string) => {
-      analytics.track("order_cancel", {
-        order_id: orderId,
-        reason,
-      });
-    },
-    []
-  );
+  const trackOrderCancel = useCallback((orderId: string, reason?: string) => {
+    analytics.track("order_cancel", {
+      order_id: orderId,
+      reason,
+    });
+  }, []);
 
   return {
     trackCheckoutStart,
@@ -260,12 +251,9 @@ export const useUploadOrderTracking = () => {
  * Hook for screen view tracking
  */
 export const useScreenTracking = () => {
-  const trackScreenView = useCallback(
-    (screenName: string, params?: Record<string, unknown>) => {
-      analytics.trackScreenView(screenName, params);
-    },
-    []
-  );
+  const trackScreenView = useCallback((screenName: string, params?: Record<string, unknown>) => {
+    analytics.trackScreenView(screenName, params);
+  }, []);
 
   return { trackScreenView };
 };
@@ -321,7 +309,7 @@ export const useTracking = () => {
     ...uploadOrder,
     ...screen,
     ...error,
-    
+
     // Direct track for custom events
     track: analytics.track,
   };

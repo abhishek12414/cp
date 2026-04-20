@@ -1,18 +1,6 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
-import {
-  Button,
-  Text,
-  IconButton,
-  Surface,
-  ActivityIndicator,
-} from "react-native-paper";
+import React from "react";
+import { StyleSheet, View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { Button, Text, IconButton, Surface, ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
@@ -20,18 +8,12 @@ import { router } from "expo-router";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Colors } from "@/constants/Colors";
-import {
-  useAddresses,
-  useDeleteAddress,
-  useSetPrimaryAddress,
-} from "@/hooks/queries";
+import { useAddresses, useDeleteAddress, useSetPrimaryAddress } from "@/hooks/queries";
 import { AddressInterface } from "@/interface";
 
 export default function AddressesScreen() {
   const colorScheme =
-    useThemeColor({}, "background") === Colors.light.background
-      ? "light"
-      : "dark";
+    useThemeColor({}, "background") === Colors.light.background ? "light" : "dark";
   const primaryColor = Colors[colorScheme].primary;
   const isDark = colorScheme === "dark";
 
@@ -52,18 +34,14 @@ export default function AddressesScreen() {
   };
 
   const handleDeleteAddress = (address: AddressInterface) => {
-    Alert.alert(
-      "Delete Address",
-      `Are you sure you want to delete "${address.label}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => deleteAddress.mutate(address.documentId || address.id),
-        },
-      ]
-    );
+    Alert.alert("Delete Address", `Are you sure you want to delete "${address.label}"?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => deleteAddress.mutate(address.documentId || address.id),
+      },
+    ]);
   };
 
   const handleSetPrimary = (address: AddressInterface) => {
@@ -166,10 +144,7 @@ const AddressCard = ({
   isDark,
 }: AddressCardProps) => {
   return (
-    <Surface
-      style={[styles.card, isDark && styles.cardDark]}
-      elevation={2}
-    >
+    <Surface style={[styles.card, isDark && styles.cardDark]} elevation={2}>
       <View style={styles.cardHeader}>
         <View style={styles.cardHeaderLeft}>
           <Text variant="titleMedium" style={styles.label}>
@@ -182,18 +157,8 @@ const AddressCard = ({
           )}
         </View>
         <View style={styles.cardActions}>
-          <IconButton
-            icon="pencil"
-            size={20}
-            onPress={onEdit}
-            iconColor={primaryColor}
-          />
-          <IconButton
-            icon="delete"
-            size={20}
-            onPress={onDelete}
-            iconColor="#f44336"
-          />
+          <IconButton icon="pencil" size={20} onPress={onEdit} iconColor={primaryColor} />
+          <IconButton icon="delete" size={20} onPress={onDelete} iconColor="#f44336" />
         </View>
       </View>
 
@@ -218,9 +183,7 @@ const AddressCard = ({
 
       {!address.isPrimary && (
         <TouchableOpacity onPress={onSetPrimary} style={styles.setPrimaryBtn}>
-          <Text style={{ color: primaryColor, fontWeight: "600" }}>
-            Set as Primary
-          </Text>
+          <Text style={{ color: primaryColor, fontWeight: "600" }}>Set as Primary</Text>
         </TouchableOpacity>
       )}
     </Surface>

@@ -22,7 +22,9 @@ export const uploadOrderApi = {
 
   // Admin: Get all upload orders
   getAllUploadOrders: () => {
-    return apiClient.get<ApiResponseInterface<UploadOrderInterface[]>>(apiRoutes.UPLOAD_ORDERS_ADMIN);
+    return apiClient.get<ApiResponseInterface<UploadOrderInterface[]>>(
+      apiRoutes.UPLOAD_ORDERS_ADMIN
+    );
   },
 
   // Admin: Update upload order

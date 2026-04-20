@@ -1,6 +1,11 @@
 import apiClient from "./apiClient";
 import { apiRoutes } from "./apiRoutes";
-import { ApiResponseInterface, CartInterface, CartItemInterface, ProductInterface } from "@/interface";
+import {
+  ApiResponseInterface,
+  CartInterface,
+  CartItemInterface,
+  ProductInterface,
+} from "@/interface";
 
 export interface AddToCartInput {
   product: string | number;
@@ -68,9 +73,7 @@ export const cartApi = {
    * Clear entire cart
    */
   clearCart: async (): Promise<{ data: { cleared: boolean } }> => {
-    const response = await apiClient.delete<{ data: { cleared: boolean } }>(
-      apiRoutes.CART_CLEAR
-    );
+    const response = await apiClient.delete<{ data: { cleared: boolean } }>(apiRoutes.CART_CLEAR);
     return response.data;
   },
 

@@ -20,9 +20,7 @@ export const useProducts = (filters: Record<string, unknown>) => {
       const config = getQueryString({ populate, ...filters });
       const url = `${apiRoutes.PRODUCTS}${config}`;
 
-      const response = await apiClient.get<ApiResponseInterface<ProductInterface[]>>(
-        url
-      );
+      const response = await apiClient.get<ApiResponseInterface<ProductInterface[]>>(url);
       return response.data.data;
     },
     ...QUERY_CONFIG.semiStatic,
@@ -43,9 +41,7 @@ export const useProductByDocumentId = (documentId: string) => {
       });
       const url = `${apiRoutes.PRODUCTS}${config}`;
 
-      const response = await apiClient.get<ApiResponseInterface<ProductInterface[]>>(
-        url
-      );
+      const response = await apiClient.get<ApiResponseInterface<ProductInterface[]>>(url);
       return response.data.data[0] || null;
     },
     enabled: !!documentId,
@@ -64,10 +60,7 @@ export const useSearchProducts = (query: string, enabled: boolean = true) => {
       const config = getQueryString({
         populate: ["images", "category", "brand"],
         filters: {
-          $or: [
-            { name: { $containsi: query } },
-            { description: { $containsi: query } },
-          ],
+          $or: [{ name: { $containsi: query } }, { description: { $containsi: query } }],
         },
         pagination: { pageSize: 10 },
       });

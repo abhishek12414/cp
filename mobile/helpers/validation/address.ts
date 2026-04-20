@@ -5,10 +5,7 @@ import * as Yup from "yup";
  * Based on Strapi address schema
  */
 export const addressValidationSchema = Yup.object().shape({
-  label: Yup.string()
-    .trim()
-    .max(50, "Label must be 50 characters or less")
-    .default("Home"),
+  label: Yup.string().trim().max(50, "Label must be 50 characters or less").default("Home"),
 
   fullName: Yup.string()
     .required("Full name is required")
