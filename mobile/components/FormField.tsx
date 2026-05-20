@@ -254,7 +254,9 @@ export function FormField({
       <Text>{fieldValue ? "Yes" : "No"}</Text>
       <Switch
         value={!!fieldValue}
-        onValueChange={(value) => helpers.setValue(value)}
+        onValueChange={(value: boolean) => {
+          helpers.setValue(value);
+        }}
         disabled={disabled || isSubmitting}
       />
     </View>

@@ -70,14 +70,15 @@ export default function TabLayout() {
       {/* Admin Panel tab: Only visible to users with admin role.
           - Uses admin.tsx in (tabs) as a redirect wrapper to /(admin)
           - href: null hides the tab from the tab bar for non-admin users */}
-      <Tabs.Screen
-        name="admin"
-        options={{
-          title: "Admin Panel",
-          tabBarIcon: ({ color }) => <Icon size={28} name="shield-account" color={color} />,
-        }}
-        href={isAdmin ? undefined : null}
-      />
+      {isAdmin && (
+        <Tabs.Screen
+          name="admin"
+          options={{
+            title: "Admin Panel",
+            tabBarIcon: ({ color }) => <Icon size={28} name="shield-account" color={color} />,
+          }}
+        />
+      )}
       <Tabs.Screen
         name="account"
         options={{

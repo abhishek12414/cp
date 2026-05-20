@@ -12,7 +12,7 @@ export type BrandCardProps = {
 };
 
 const BrandCard = ({ data, onPress }: BrandCardProps) => {
-  const imageUri = getImageUrl(data.logo?.url || "");
+  const imageUri = getImageUrl(data.logo?.data?.attributes?.url || "");
 
   return (
     <TouchableOpacity

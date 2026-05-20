@@ -12,7 +12,7 @@ export type CategoryCardProps = {
 };
 
 export function CategoryCard({ data, onPress }: CategoryCardProps) {
-  const imageUri = getImageUrl(data.image?.url || "");
+  const imageUri = getImageUrl(data.image?.data?.attributes?.url || "");
 
   return (
     <TouchableOpacity style={styles.container} onPress={() => onPress(data)} activeOpacity={0.8}>

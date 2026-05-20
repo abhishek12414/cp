@@ -21,7 +21,7 @@ export function Recommendations() {
   const { data: products = [], isLoading } = useRecommendations();
 
   const handleAddToCart = (product: {
-    id: string;
+    id: number;
     documentId: string;
     name: string;
     price: number;
@@ -33,7 +33,7 @@ export function Recommendations() {
         name: product.name,
         price: product.price,
         quantity: 1,
-        image: product.images?.[0]?.url ? getImageUrl(product.images[0].url) : "",
+        image: product.images?.[0]?.url ? getImageUrl(product.images[0].url) || "" : "",
       })
     );
   };

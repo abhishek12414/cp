@@ -76,7 +76,7 @@ export const addressInitialValues = {
   pincode: "",
   country: "India",
   isPrimary: false,
-  type: "shipping" as const,
+  type: "shipping" as "shipping" | "billing" | "both",
 };
 
 /**

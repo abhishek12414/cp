@@ -124,7 +124,7 @@ export default function ManageProductsScreen() {
                   {hasImages && firstImage ? (
                     <View style={styles.imageContainer}>
                       <Image
-                        source={{ uri: getImageUrl(firstImage.url) }}
+                        source={{ uri: getImageUrl(firstImage.url) || undefined }}
                         style={styles.productImage}
                         contentFit="cover"
                       />

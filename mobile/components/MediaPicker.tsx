@@ -93,7 +93,7 @@ export function MediaPicker({
       }
 
       try {
-        const response = await uploadApi.getFiles(pageNum, pageSize);
+        const response = await uploadApi.getFiles({ page: pageNum, pageSize });
         const newFiles = response.data || [];
         const pagination = response.meta?.pagination;
 

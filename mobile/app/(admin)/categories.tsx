@@ -137,7 +137,7 @@ export default function ManageCategoriesScreen() {
           data={categories}
           keyExtractor={(item) => item.documentId}
           renderItem={({ item }) => {
-            const imageUri = getImageUrl(item.image?.url || "");
+            const imageUri = getImageUrl(item.image?.data?.attributes?.url || "");
             return (
               <View style={styles.categoryItem}>
                 {/* Category info */}
